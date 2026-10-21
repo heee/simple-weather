@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Simple Weather</title>
+<meta name="description" content="Current weather, rain, 7-day forecast and stargazing outlook.">
+<meta name="theme-color" content="#EEF3F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B1220" media="(prefers-color-scheme: dark)">
+<meta name="color-scheme" content="light dark">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Weather">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="preload" href="fonts/manrope.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main id="pager" class="pager" aria-live="polite"></main>
+
+<dialog id="places" class="sheet" aria-labelledby="places-title">
+  <div class="sheet-head">
+    <h2 id="places-title">Places</h2>
+    <button type="button" class="icon-btn" id="places-close" aria-label="Close">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <ul id="places-list" class="place-list"></ul>
+  <label class="search">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+    <input id="places-search" type="search" placeholder="Add a city or zip" autocomplete="off" autocapitalize="words" enterkeyhint="search" aria-label="Search for a place to add">
+  </label>
+  <ul id="places-results" class="place-list results"></ul>
+</dialog>
+
+<script src="vendor/suncalc.js"></script>
+<script src="logic.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
