@@ -376,27 +376,34 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
   const outlookSheet = document.getElementById('outlook');
   const outlookList = document.getElementById('outlook-list');
 
-  const slotRow = (name, w) => `<div class="slot${w.best ? ' best' : ''}">
-    <div><span class="n">${name}</span><span class="s">${esc(w.when)}</span></div>
-    <div><span class="n v-${w.verdict.cls}">${esc(w.verdict.text)}</span><span class="s">${esc(w.detail)}</span></div>
-  </div>`;
+  // One table cell: short verdict on top, cloud % below, plus haze/fog and a bright moon when it costs a clear sky.
+  function slotCell(w) {
+    const full = `${w.when}: ${w.verdict.text}${w.detail ? ', ' + w.detail : ''}`;
+    let sub = '';
+    if (!w.none && !w.past && !w.noData) sub = [`${w.cloud}%`, w.bright && w.verdict.score > 0 && 'moon', w.haze].filter(Boolean).join(' · ');
+    const word = w.none ? '—' : w.verdict.text.split(' · ')[0];
+    return `<td class="cell${w.best ? ' best' : ''}" title="${esc(full)}">
+      <span class="n v-${w.verdict.cls}">${esc(word)}</span>${sub ? `<span class="s">${esc(sub)}</span>` : ''}</td>`;
+  }
 
   function outlookHTML(nights) {
-    let out = '', farNoted = false;
+    let rows = '', farNoted = false;
     for (const n of nights) {
       if (n.far && !farNoted) {
         farNoted = true;
-        out += '<p class="far-note">Low confidence: cloud forecasts this far out often change.</p>';
+        rows += '<tr class="far-note"><td colspan="4">Low confidence: forecasts this far out often change.</td></tr>';
       }
-      out += `<section class="night${n.far ? ' far' : ''}" aria-label="${esc(n.name)}, ${esc(n.date)}">
-  <div class="night-head">${moonIcon(n.moon.phase, n.moon.fraction, 26, n.moon.name + ' moon')}
-    <div><span class="n">${esc(n.name)}</span><span class="s">${esc(n.date)} · moon ${n.moon.pct}% lit</span></div>
-    ${n.best ? '<span class="pill good">Best</span>' : ''}
-  </div>
-  ${slotRow('Evening', n.evening)}${slotRow('Morning', n.morning)}
-</section>`;
+      rows += `<tr class="${n.far ? 'far' : ''}">
+    <th scope="row"><span class="n">${esc(n.name)}${n.best ? ` ${icon('star', 13, 2, 'Best night', 'var(--star-icon)')}` : ''}</span><span class="s">${esc(n.date)}</span></th>
+    <td class="mn">${moonIcon(n.moon.phase, n.moon.fraction, 20, n.moon.name + ' moon')}<span class="s">${n.moon.pct}%</span></td>
+    ${slotCell(n.evening)}${slotCell(n.morning)}
+  </tr>`;
     }
-    return out;
+    return `<table class="outlook-table">
+  <thead><tr><th scope="col">Night</th><th scope="col">Moon</th>
+    <th scope="col">Evening<span class="s">dark → 1 am</span></th><th scope="col">Morning<span class="s">4:30 → dawn</span></th></tr></thead>
+  <tbody>${rows}</tbody>
+</table>`;
   }
 
   function openOutlook(place) {

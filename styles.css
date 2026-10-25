@@ -296,20 +296,24 @@ a { color: var(--rain); }
 
 .sheet-titles { display: flex; flex-direction: column; gap: 2px; }
 .sheet-sub { font-size: 13px; color: var(--muted); }
-.outlook { display: flex; flex-direction: column; gap: 10px; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
-.night { background: var(--card); border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; }
-.night.far { opacity: .62; }
-.night-head { display: flex; align-items: center; gap: 10px; padding-bottom: 8px; }
-.night-head > div { flex: 1; display: flex; flex-direction: column; gap: 1px; }
-.night-head .n { font-size: 16px; font-weight: 600; }
-.night-head .s { font-size: 13px; color: var(--muted); }
-.slot { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 8px 0; border-top: 1px solid var(--divider); }
-.slot:last-child { padding-bottom: 0; }
-.slot > div { display: flex; flex-direction: column; gap: 1px; }
-.slot > div:last-child { align-items: flex-end; text-align: right; }
-.slot .n { font-size: 15px; font-weight: 600; }
-.slot .s { font-size: 13px; color: var(--muted); }
-.far-note { margin: 4px 2px 0; font-size: 13px; color: var(--muted); }
+.outlook { overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; background: var(--card); border-radius: 16px; }
+.outlook-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.outlook-table th, .outlook-table td { padding: 8px 6px; text-align: left; vertical-align: middle; border-top: 1px solid var(--divider); font-weight: normal; }
+.outlook-table thead th {
+  position: sticky; top: 0; z-index: 1; background: var(--card); border-top: 0;
+  font-size: 12px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase; color: var(--muted);
+}
+.outlook-table th:first-child, .outlook-table td:first-child { padding-left: 14px; width: 30%; }
+.outlook-table th:nth-child(2) { width: 17%; }
+.outlook-table th:last-child, .outlook-table td:last-child { padding-right: 14px; }
+.outlook-table .n { display: flex; align-items: center; gap: 4px; font-size: 15px; font-weight: 600; }
+.outlook-table .s { display: block; font-size: 12px; color: var(--muted); text-transform: none; letter-spacing: 0; font-weight: 500; }
+.outlook-table .mn { white-space: nowrap; }
+.outlook-table .mn svg { vertical-align: middle; }
+.outlook-table .mn .s { display: inline; margin-left: 4px; vertical-align: middle; }
+.outlook-table .cell.best { background: var(--good-bg); }
+.outlook-table tr.far > * { opacity: .55; }
+.outlook-table .far-note td { font-size: 12px; color: var(--muted); padding-top: 10px; padding-bottom: 6px; }
 
 @media (prefers-reduced-motion: reduce) {
   .sheet[open] { animation: none; }
