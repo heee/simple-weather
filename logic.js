@@ -36,6 +36,13 @@
     return x.ap === y.ap ? `${x.t} – ${y.t} ${y.ap}` : `${x.t} ${x.ap} – ${y.t} ${y.ap}`;
   }
   const round5 = ms => Math.round(ms / (5 * MIN)) * 5 * MIN;
+  const mdFmts = new Map();
+  function monthDay(ms, tz) {
+    const key = tz || '';
+    let f = mdFmts.get(key);
+    if (!f) mdFmts.set(key, f = new Intl.DateTimeFormat('en-US', { timeZone: tz || undefined, month: 'short', day: 'numeric' }));
+    return f.format(new Date(ms));
+  }
   const valid = d => d instanceof Date && !isNaN(d);
 
   /* ---------- weather codes (WMO) ---------- */
@@ -121,6 +128,9 @@
 
   function cloudClass(avg) { return avg <= 20 ? 'Clear' : avg <= 50 ? 'Partly' : 'Cloudy'; }
 
+  // Lowest visibility in the window (metres): under 1 km is fog, under 5 km is haze.
+  function hazeClass(minVis) { return minVis < 1000 ? 'fog' : minVis < 5000 ? 'haze' : null; }
+
   function verdict(sky, bright, maxPop) {
     if (maxPop >= 40 || sky === 'Cloudy') return VERDICTS.poor;
     if (sky === 'Clear') return bright ? VERDICTS.fairMoon : VERDICTS.great;
@@ -129,12 +139,13 @@
 
   // Cloud, rain and moon over [start, end), using every hourly slot that overlaps the window.
   function windowStats(w, H, lat, lon) {
-    const clouds = [], pops = [];
+    const clouds = [], pops = [], vis = [];
     for (let i = 0; i < H.time.length; i++) {
       const t = H.time[i] * 1000;
       if (t + HOUR > w.start && t < w.end) {
         clouds.push(H.cloud_cover[i]);
         pops.push(H.precipitation_probability[i] ?? 0);
+        if (H.visibility && H.visibility[i] != null) vis.push(H.visibility[i]);
       }
     }
     let up = 0, n = 0;
@@ -146,7 +157,9 @@
     const cloud = Math.round(clouds.reduce((a, b) => a + b, 0) / clouds.length);
     const maxPop = Math.max(...pops);
     const sky = cloudClass(cloud);
-    return { ...w, cloud, maxPop, sky, bright, moonUpShare, lit, verdict: verdict(sky, bright, maxPop) };
+    const haze = vis.length ? hazeClass(Math.min(...vis)) : null;
+    const v = haze === 'fog' ? VERDICTS.poor : verdict(sky, bright, maxPop);
+    return { ...w, cloud, maxPop, sky, haze, bright, moonUpShare, lit, verdict: v };
   }
 
   /* ---------- the whole screen model for one place ---------- */
@@ -225,6 +238,7 @@
       for (let i = from; i < from + 3; i++) { const w = make(i); if (usable(w)) return w; }
       return null;
     };
+    const detailOf = s => `${s.sky} · ${s.cloud}% cloud` + (s.haze ? ` · ${s.haze}` : '');
     const describe = w => {
       if (!w) return { name: '', none: true, when: 'No dark window', verdict: VERDICTS.poor, detail: '' };
       const s = windowStats(w, H, lat, lon);
@@ -232,7 +246,7 @@
       const prefix = startDate.date > today ? startDate.wd + ' ' : '';
       s.when = prefix + span(round5(w.start), round5(w.end), tz);
       if (s.noData) { s.verdict = { text: 'No data', cls: 'poor', score: -1 }; s.detail = 'Beyond the forecast'; }
-      else s.detail = `${s.sky} · ${s.cloud}% cloud`;
+      else s.detail = detailOf(s);
       return s;
     };
     const tw = describe(pick(tonight, ti - 1));
@@ -244,6 +258,43 @@
       if (!best || w.verdict.score > best.verdict.score ||
           (w.verdict.score === best.verdict.score && w.cloud < best.cloud)) best = w;
     }
+
+    // Outlook: evening and pre-dawn windows for the next 10 nights. Before sunrise the current night leads.
+    const OUTLOOK_NIGHTS = 10, SURE_NIGHTS = 7;
+    const slot = w => {
+      if (!(w.end > w.start)) return { none: true, when: 'No dark window', verdict: VERDICTS.poor, detail: '' };
+      const when = span(round5(w.start), round5(w.end), tz);
+      if (w.end <= now) return { ...w, past: true, when, verdict: { text: 'Over', cls: 'poor', score: -1 }, detail: '' };
+      const s = windowStats(w, H, lat, lon);
+      s.when = when;
+      if (s.noData) { s.verdict = { text: 'No data', cls: 'poor', score: -1 }; s.detail = 'Beyond the forecast'; }
+      else s.detail = detailOf(s);
+      return s;
+    };
+    const early = now < sunrise;
+    const first = early ? ti - 1 : ti;
+    const outlook = [];
+    for (let k = 0; k < OUTLOOK_NIGHTS; k++) {
+      const i = first + k;
+      const noon = dayStart(i) + 12 * HOUR;
+      const evening = slot(tonight(i)), morning = slot(predawn(i + 1));
+      const illum = SunCalc.getMoonIllumination(new Date(noon + 12 * HOUR));
+      outlook.push({
+        name: k === 0 ? (early ? 'Now' : 'Tonight') : k === 1 && early ? 'Tonight' : parts(noon, tz).wd,
+        date: monthDay(noon, tz), far: k >= SURE_NIGHTS, evening, morning,
+        moon: { phase: illum.phase, fraction: illum.fraction, pct: Math.round(illum.fraction * 100), name: phaseName(illum.phase) }
+      });
+    }
+    let bestSlot = null;
+    for (const n of outlook) {
+      if (n.far) continue;
+      for (const w of [n.evening, n.morning]) {
+        if (w.none || w.past || w.noData || w.verdict.score <= 0) continue;
+        if (!bestSlot || w.verdict.score > bestSlot.w.verdict.score ||
+            (w.verdict.score === bestSlot.w.verdict.score && w.cloud < bestSlot.w.cloud)) bestSlot = { n, w };
+      }
+    }
+    if (bestSlot) { bestSlot.n.best = true; bestSlot.w.best = true; }
 
     // Moon right now
     const illum = SunCalc.getMoonIllumination(new Date(now));
@@ -288,9 +339,9 @@
 
     return {
       tz, isNight, cur, today: todayCard, days, weekMin, weekMax,
-      stars: { tonight: tw, predawn: pw, best, hero, moon }
+      stars: { tonight: tw, predawn: pw, best, hero, moon, outlook }
     };
   }
 
-  root.SWLogic = { build, parts, time, span, group, label, iconName, compass, phaseName, verdict, cloudClass, moonEvents };
+  root.SWLogic = { build, parts, time, span, group, label, iconName, compass, phaseName, verdict, cloudClass, hazeClass, moonEvents };
 })(typeof window !== 'undefined' ? window : globalThis);

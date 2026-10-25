@@ -12,10 +12,10 @@ const HOUSTON = { id: 'h', name: 'Houston', region: 'TX', lat: 29.76, lon: -95.3
 const HOUR = 36e5;
 
 // Local midnight (CDT, UTC-5) of the first forecast day.
-function fixture(firstDayUTCMidnight, cloudAt, popAt = () => 0) {
+function fixture(firstDayUTCMidnight, cloudAt, popAt = () => 0, days = 8) {
   const t0 = firstDayUTCMidnight / 1000;
   const hourly = { time: [], temperature_2m: [], precipitation_probability: [], cloud_cover: [], weather_code: [], is_day: [] };
-  for (let i = 0; i < 8 * 24; i++) {
+  for (let i = 0; i < days * 24; i++) {
     const t = t0 + i * 3600;
     const ms = t * 1000;
     const p = L.parts(ms, TZ);
@@ -27,7 +27,7 @@ function fixture(firstDayUTCMidnight, cloudAt, popAt = () => 0) {
     hourly.is_day.push(p.h >= 7 && p.h < 19 ? 1 : 0);
   }
   const daily = { time: [], weather_code: [], temperature_2m_max: [], temperature_2m_min: [], precipitation_probability_max: [], sunrise: [], sunset: [] };
-  for (let d = 0; d < 8; d++) {
+  for (let d = 0; d < days; d++) {
     const t = t0 + d * 86400;
     const s = SunCalc.getTimes(new Date(t * 1000 + 12 * HOUR), HOUSTON.lat, HOUSTON.lon);
     daily.time.push(t);
@@ -140,6 +140,53 @@ check('new moon night: clear tonight is Great', () => {
   assert.ok(m.stars.moon.pct < 5, 'moon almost new, got ' + m.stars.moon.pct + '%');
   assert.strictEqual(m.stars.tonight.verdict.text, 'Great');
   assert.strictEqual(m.stars.moon.name, 'New moon');
+});
+
+// ---- 10-night outlook ----
+check('outlook: 10 nights from tonight, last 3 low confidence, best on a sure night', () => {
+  const data = fixture(oct21, () => 6, undefined, 11);
+  const o = run(data, '2026-10-21T20:00:00Z').stars.outlook; // 3 pm CDT
+  assert.strictEqual(o.length, 10);
+  assert.deepStrictEqual(o.slice(0, 3).map(n => n.name), ['Tonight', 'Thu', 'Fri']);
+  assert.strictEqual(o[0].date, 'Oct 21');
+  assert.deepStrictEqual(o.map(n => n.far), [0, 0, 0, 0, 0, 0, 0, 1, 1, 1].map(Boolean));
+  assert.strictEqual(o[0].evening.verdict.text, 'Fair · bright moon');
+  assert.strictEqual(o[0].morning.verdict.text, 'Great');
+  assert.ok(o.every(n => !n.evening.noData && !n.morning.noData), '11 days covers every night');
+  const best = o.filter(n => n.best);
+  assert.strictEqual(best.length, 1);
+  assert.ok(!best[0].far);
+});
+
+check('outlook: before sunrise the current night leads as "Now" with its evening over', () => {
+  const o = run(fixture(oct21, () => 6, undefined, 11), '2026-10-22T08:00:00Z').stars.outlook; // 3 am CDT
+  assert.strictEqual(o[0].name, 'Now');
+  assert.strictEqual(o[0].date, 'Oct 21');
+  assert.strictEqual(o[0].evening.verdict.text, 'Over');
+  assert.notStrictEqual(o[0].morning.verdict.text, 'Over');
+  assert.strictEqual(o[1].name, 'Tonight');
+});
+
+check('outlook: nights past the forecast say "No data"', () => {
+  const o = run(clear, '2026-10-21T20:00:00Z').stars.outlook; // only 8 days
+  assert.strictEqual(o[9].evening.verdict.text, 'No data');
+  assert.strictEqual(o[9].morning.detail, 'Beyond the forecast');
+});
+
+check('fog makes a window Poor; haze is only noted', () => {
+  const data = fixture(oct21, () => 6);
+  data.hourly.visibility = data.hourly.time.map(t => {
+    const p = L.parts(t * 1000, TZ);
+    return p.date === '2026-10-22' && p.h >= 4 && p.h < 7 ? 600 : p.h >= 20 ? 3000 : 24000;
+  });
+  const m = run(data, '2026-10-21T20:00:00Z');
+  assert.strictEqual(m.stars.predawn.verdict.text, 'Poor');
+  assert.strictEqual(m.stars.predawn.detail, 'Clear · 6% cloud · fog');
+  assert.strictEqual(m.stars.tonight.verdict.text, 'Fair · bright moon');
+  assert.strictEqual(m.stars.tonight.detail, 'Clear · 6% cloud · haze');
+  assert.strictEqual(L.hazeClass(999), 'fog');
+  assert.strictEqual(L.hazeClass(4999), 'haze');
+  assert.strictEqual(L.hazeClass(5000), null);
 });
 
 check('verdict table', () => {

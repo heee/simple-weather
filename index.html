@@ -36,6 +36,19 @@
   <ul id="places-results" class="place-list results"></ul>
 </dialog>
 
+<dialog id="outlook" class="sheet" aria-labelledby="outlook-title">
+  <div class="sheet-head">
+    <div class="sheet-titles">
+      <h2 id="outlook-title">Star outlook</h2>
+      <span id="outlook-sub" class="sheet-sub"></span>
+    </div>
+    <button type="button" class="icon-btn" id="outlook-close" aria-label="Close">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <div id="outlook-list" class="outlook"></div>
+</dialog>
+
 <script src="vendor/suncalc.js"></script>
 <script src="logic.js"></script>
 <script src="app.js"></script>

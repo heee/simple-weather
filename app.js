@@ -50,6 +50,7 @@
     drop: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
     star: '<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>',
     chevron: '<path d="M6 9l6 6 6-6"/>',
+    outlook: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M12 12.6l.85 1.8 1.85.85-1.85.85-.85 1.8-.85-1.8-1.85-.85 1.85-.85z"/>',
     trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'
   };
   function icon(name, size, sw, label, color) {
@@ -202,6 +203,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     const times = [moon.rise && `Rises ${moon.rise}`, moon.set && `Sets ${moon.set}`].filter(Boolean).join(' · ');
     return `<div class="moon">${moonIcon(moon.phase, moon.fraction, size, moon.name + ' moon')}
     <div><span class="n">${moon.name} · ${moon.pct}% lit</span><span class="s">${times || 'No rise or set soon'}</span></div>
+    <button type="button" class="icon-btn" data-act="outlook" aria-label="Star outlook for the next 10 nights">${icon('outlook', 22, 1.6)}</button>
   </div>`;
   }
 
@@ -307,9 +309,9 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     const q = new URLSearchParams({
       latitude: p.lat, longitude: p.lon,
       current: 'temperature_2m,apparent_temperature,weather_code,cloud_cover,wind_speed_10m,wind_direction_10m,is_day',
-      hourly: 'temperature_2m,precipitation_probability,cloud_cover,weather_code,is_day',
+      hourly: 'temperature_2m,precipitation_probability,cloud_cover,weather_code,is_day,visibility',
       daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset',
-      temperature_unit: 'fahrenheit', wind_speed_unit: 'mph', timezone: 'auto', forecast_days: 8, timeformat: 'unixtime'
+      temperature_unit: 'fahrenheit', wind_speed_unit: 'mph', timezone: 'auto', forecast_days: 11, timeformat: 'unixtime'
     });
     return 'https://api.open-meteo.com/v1/forecast?' + q;
   }
@@ -358,6 +360,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
       store.set('sw.units', state.units);
       renderAll();
     } else if (act === 'places') openPlaces();
+    else if (act === 'outlook' && place) openOutlook(place);
   });
 
   document.addEventListener('visibilitychange', () => {
@@ -367,6 +370,48 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
   });
   window.addEventListener('online', refreshOld);
   setInterval(() => { if (document.visibilityState === 'visible') renderAll(); }, MIN);
+
+  /* ---------- star outlook sheet ---------- */
+
+  const outlookSheet = document.getElementById('outlook');
+  const outlookList = document.getElementById('outlook-list');
+
+  const slotRow = (name, w) => `<div class="slot${w.best ? ' best' : ''}">
+    <div><span class="n">${name}</span><span class="s">${esc(w.when)}</span></div>
+    <div><span class="n v-${w.verdict.cls}">${esc(w.verdict.text)}</span><span class="s">${esc(w.detail)}</span></div>
+  </div>`;
+
+  function outlookHTML(nights) {
+    let out = '', farNoted = false;
+    for (const n of nights) {
+      if (n.far && !farNoted) {
+        farNoted = true;
+        out += '<p class="far-note">Low confidence: cloud forecasts this far out often change.</p>';
+      }
+      out += `<section class="night${n.far ? ' far' : ''}" aria-label="${esc(n.name)}, ${esc(n.date)}">
+  <div class="night-head">${moonIcon(n.moon.phase, n.moon.fraction, 26, n.moon.name + ' moon')}
+    <div><span class="n">${esc(n.name)}</span><span class="s">${esc(n.date)} · moon ${n.moon.pct}% lit</span></div>
+    ${n.best ? '<span class="pill good">Best</span>' : ''}
+  </div>
+  ${slotRow('Evening', n.evening)}${slotRow('Morning', n.morning)}
+</section>`;
+    }
+    return out;
+  }
+
+  function openOutlook(place) {
+    const rec = state.wx[place.id];
+    let m = null;
+    try { m = rec && L.build(place, rec, Date.now()); } catch (e) { console.error(e); }
+    if (!m) return;
+    document.getElementById('outlook-sub').textContent = `${place.name} · next ${m.stars.outlook.length} nights`;
+    outlookList.innerHTML = outlookHTML(m.stars.outlook);
+    outlookList.scrollTop = 0;
+    if (typeof outlookSheet.showModal === 'function') outlookSheet.showModal(); else outlookSheet.setAttribute('open', '');
+  }
+  function closeOutlook() { if (outlookSheet.open) outlookSheet.close ? outlookSheet.close() : outlookSheet.removeAttribute('open'); }
+  document.getElementById('outlook-close').addEventListener('click', closeOutlook);
+  outlookSheet.addEventListener('click', e => { if (e.target === outlookSheet) closeOutlook(); });
 
   /* ---------- places sheet ---------- */
 
