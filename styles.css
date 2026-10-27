@@ -230,6 +230,13 @@ a { color: var(--rain); }
 .moon .n { font-size: 15px; font-weight: 600; }
 .moon .s { font-size: 13px; color: var(--muted); }
 .moon .icon-btn { margin: -10px -10px -10px 0; }
+.moon > div { display: block; }
+.moon .n { display: inline; }
+.moon .s { display: block; margin-top: 2px; }
+.moon-name {
+  border: 0; background: transparent; padding: 0; font: inherit; font-size: 15px; font-weight: 600; color: inherit;
+  text-decoration: underline dotted color-mix(in srgb, currentColor 55%, transparent); text-underline-offset: 3px;
+}
 
 .stars.hero { background: var(--hero); border: 1px solid var(--hero-border); border-radius: 22px; padding: 18px 16px; gap: 14px; }
 .hero-main { display: flex; flex-direction: column; gap: 4px; }
@@ -315,7 +322,59 @@ a { color: var(--rain); }
 .outlook-table tr.far > * { opacity: .55; }
 .outlook-table .far-note td { font-size: 12px; color: var(--muted); padding-top: 10px; padding-bottom: 6px; }
 
+/* tappable nights + hourly chart */
+.night-row { cursor: pointer; }
+.night-row:active > *, .night-row.open > * { background: color-mix(in srgb, var(--muted) 8%, transparent); }
+.night-row.open > .cell.best, .night-row:active > .cell.best { background: var(--good-bg); }
+.night-row th .n::after {
+  content: ""; width: 6px; height: 6px; margin-left: 2px; border: solid var(--muted); border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg) translateY(-2px); transition: transform .15s;
+}
+.night-row.open th .n::after { transform: rotate(-135deg) translateY(-1px); }
+.night-detail > td { padding: 4px 14px 14px !important; border-top: 0 !important; background: color-mix(in srgb, var(--muted) 8%, transparent); }
+.night-detail.far > td { opacity: .75; }
+.hours { padding-top: 6px; }
+.hrow { display: grid; }
+.hrow > * { text-align: center; }
+.hrow .win { background: var(--good-bg); }
+.hbars { height: 74px; align-items: end; padding-bottom: 2px; }
+.hb { height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding: 0 2px; border-radius: 4px 4px 0 0; }
+.hb i { display: block; flex: none; width: 100%; max-width: 16px; border-radius: 3px 3px 0 0; background: color-mix(in srgb, var(--muted) 70%, transparent); }
+.hb .pct { font-size: 9px; line-height: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hb.past, .hrow .past { opacity: .4; }
+.hmoon > span { height: 12px; display: flex; align-items: center; justify-content: center; }
+.hmoon b, .hlegend b { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--star-icon); }
+.hlabels > span { font-size: 10px; color: var(--muted); padding: 2px 0 4px; border-radius: 0 0 4px 4px; white-space: nowrap; overflow: visible; }
+.hlegend { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font-size: 11px; color: var(--muted); }
+.hlegend span { display: inline-flex; align-items: center; gap: 5px; }
+.hlegend .sw { width: 10px; height: 10px; border-radius: 2px; }
+.hlegend .sw.win { background: var(--good-bg); border: 1px solid color-mix(in srgb, var(--good) 40%, transparent); }
+.hlegend .sw.bar { background: color-mix(in srgb, var(--muted) 70%, transparent); }
+.hsum { margin: 6px 0 0; font-size: 13px; color: var(--soft); font-weight: 500; }
+
+/* ---- moon phase explainer (link-preview card) ---- */
+
+.pop {
+  position: fixed; inset: auto 0; margin: 0 auto; top: 20%;
+  width: calc(100% - 32px); max-width: 420px; max-height: 80dvh; overflow-y: auto;
+  border: 1px solid var(--hero-border); border-radius: 16px; padding: 14px 16px 16px;
+  background: var(--card); color: var(--text); box-shadow: 0 12px 40px rgba(5, 10, 20, .35);
+}
+.pop::backdrop { background: rgba(5, 10, 20, .25); }
+.pop[open] { animation: pop .16s ease-out; }
+@keyframes pop { from { transform: translateY(-6px) scale(.98); opacity: 0; } }
+.pop-head { display: flex; align-items: center; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--divider); }
+.pop-head > div { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.pop-head .icon-btn { margin: -8px -10px auto 0; }
+.pop h2 { margin: 0; font-size: 20px; font-weight: 600; }
+.pop h3 { margin: 12px 0 0; font-size: 13px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase; color: var(--muted); }
+.pop .s { font-size: 13px; color: var(--muted); }
+.pop p { margin: 8px 0 0; font-size: 15px; line-height: 1.5; color: var(--soft); }
+.pop p b { color: var(--text); }
+.pop a { display: inline-block; margin-top: 12px; font-size: 14px; font-weight: 600; text-decoration: none; }
+
 @media (prefers-reduced-motion: reduce) {
+  .pop[open] { animation: none; }
   .sheet[open] { animation: none; }
   .icon-btn.spinning svg { animation-duration: 2s; }
 }

@@ -271,17 +271,36 @@
       else s.detail = detailOf(s);
       return s;
     };
+    // Hour by hour from sunset to sunrise, for the outlook's drill-down chart.
+    const nightHours = (i, ev, mo) => {
+      const from = +sunTimes(i).sunset, to = +sunTimes(i + 1).sunrise;
+      const out = [];
+      for (let j = 0; j < H.time.length; j++) {
+        const t = ms(H.time[j]);
+        if (!(t + HOUR > from && t < to)) continue;
+        const c = clock(t, tz);
+        const inWin = w => w.end > w.start && t + HOUR > w.start && t < w.end;
+        out.push({
+          t, label: `${c.t}${c.ap[0]}`, cloud: H.cloud_cover[j], pop: H.precipitation_probability[j] ?? 0,
+          haze: H.visibility && H.visibility[j] != null ? hazeClass(H.visibility[j]) : null,
+          moonUp: moonAlt(t + 30 * MIN, lat, lon) > 0, evening: inWin(ev), morning: inWin(mo), past: t + HOUR <= now,
+          dark: t + HOUR > ev.start && t < (mo.end > mo.start ? mo.end : to)
+        });
+      }
+      return out;
+    };
     const early = now < sunrise;
     const first = early ? ti - 1 : ti;
     const outlook = [];
     for (let k = 0; k < OUTLOOK_NIGHTS; k++) {
       const i = first + k;
       const noon = dayStart(i) + 12 * HOUR;
-      const evening = slot(tonight(i)), morning = slot(predawn(i + 1));
+      const ev = tonight(i), mo = predawn(i + 1);
+      const evening = slot(ev), morning = slot(mo);
       const illum = SunCalc.getMoonIllumination(new Date(noon + 12 * HOUR));
       outlook.push({
         name: k === 0 ? (early ? 'Now' : 'Tonight') : k === 1 && early ? 'Tonight' : parts(noon, tz).wd,
-        date: monthDay(noon, tz), far: k >= SURE_NIGHTS, evening, morning,
+        date: monthDay(noon, tz), far: k >= SURE_NIGHTS, evening, morning, hours: nightHours(i, ev, mo),
         moon: { phase: illum.phase, fraction: illum.fraction, pct: Math.round(illum.fraction * 100), name: phaseName(illum.phase) }
       });
     }

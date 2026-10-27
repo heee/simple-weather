@@ -189,6 +189,18 @@ check('fog makes a window Poor; haze is only noted', () => {
   assert.strictEqual(L.hazeClass(5000), null);
 });
 
+check('outlook: hourly detail runs sunset to sunrise with windows and moon flagged', () => {
+  const o = run(fixture(oct21, () => 6, undefined, 11), '2026-10-21T20:00:00Z').stars.outlook;
+  const hrs = o[0].hours;
+  assert.ok(hrs.length >= 12 && hrs.length <= 14, 'hours: ' + hrs.length);
+  assert.strictEqual(hrs[0].label, '6p');
+  assert.strictEqual(hrs[hrs.length - 1].label, '7a');
+  assert.ok(!hrs[0].dark && hrs.find(h => h.label === '10p').dark, 'twilight is not dark, 10 pm is');
+  assert.ok(hrs.find(h => h.label === '10p').evening && hrs.find(h => h.label === '5a').morning);
+  assert.ok(hrs.find(h => h.label === '9p').moonUp, 'waxing gibbous up in the evening');
+  assert.ok(!hrs.find(h => h.label === '5a').moonUp, 'and set by 5 am');
+});
+
 check('verdict table', () => {
   assert.strictEqual(L.verdict('Clear', false, 0).text, 'Great');
   assert.strictEqual(L.verdict('Clear', true, 0).text, 'Fair · bright moon');

@@ -50,6 +50,7 @@
     drop: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
     star: '<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>',
     chevron: '<path d="M6 9l6 6 6-6"/>',
+    close: '<path d="M6 6l12 12M18 6L6 18"/>',
     outlook: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M12 12.6l.85 1.8 1.85.85-1.85.85-.85 1.8-.85-1.8-1.85-.85 1.85-.85z"/>',
     trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'
   };
@@ -202,7 +203,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
   function moonHTML(moon, size) {
     const times = [moon.rise && `Rises ${moon.rise}`, moon.set && `Sets ${moon.set}`].filter(Boolean).join(' · ');
     return `<div class="moon">${moonIcon(moon.phase, moon.fraction, size, moon.name + ' moon')}
-    <div><span class="n">${moon.name} · ${moon.pct}% lit</span><span class="s">${times || 'No rise or set soon'}</span></div>
+    <div><button type="button" class="n moon-name" data-act="moon" aria-haspopup="dialog">${moon.name}</button><span class="n"> · ${moon.pct}% lit</span><span class="s">${times || 'No rise or set soon'}</span></div>
     <button type="button" class="icon-btn" data-act="outlook" aria-label="Star outlook for the next 10 nights">${icon('outlook', 22, 1.6)}</button>
   </div>`;
   }
@@ -361,6 +362,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
       renderAll();
     } else if (act === 'places') openPlaces();
     else if (act === 'outlook' && place) openOutlook(place);
+    else if (act === 'moon' && place) openMoonInfo(place, btn);
   });
 
   document.addEventListener('visibilitychange', () => {
@@ -386,6 +388,53 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
       <span class="n v-${w.verdict.cls}">${esc(word)}</span>${sub ? `<span class="s">${esc(sub)}</span>` : ''}</td>`;
   }
 
+  // "Clearest", moon and haze notes for one night's hours.
+  function hoursSummary(hrs) {
+    const live = hrs.filter(h => h.dark && !h.past);
+    const out = [];
+    const min = live.length ? Math.min(...live.map(h => h.cloud)) : 0;
+    if (live.length && min >= 80) out.push('No clear spell');
+    else if (live.length) {
+      const i = hrs.indexOf(live.find(h => h.cloud === min));
+      let a = i, b = i;
+      const ok = h => h && h.dark && !h.past && h.cloud <= min + 5;
+      while (ok(hrs[a - 1])) a--;
+      while (ok(hrs[b + 1])) b++;
+      out.push(`Clearest ${a === b ? hrs[a].label : `${hrs[a].label}–${hrs[b].label}`} · ${min}%`);
+    }
+    const up = hrs.map(h => h.moonUp), f = up.indexOf(true), l = up.lastIndexOf(true);
+    if (f < 0) out.push('No moon');
+    else if (f === 0 && l === hrs.length - 1) out.push('Moon up all night');
+    else if (f === 0) out.push(`Moon sets ~${hrs[l].label}`);
+    else if (l === hrs.length - 1) out.push(`Moon rises ~${hrs[f].label}`);
+    else out.push(`Moon up ${hrs[f].label}–${hrs[l].label}`);
+    for (const kind of ['fog', 'haze']) {
+      const h = hrs.find(x => x.haze === kind);
+      if (h) { out.push(`${kind === 'fog' ? 'Fog' : 'Haze'} from ${h.label}`); break; }
+    }
+    const pop = Math.max(...hrs.map(h => h.pop));
+    if (pop >= 30) out.push(`Rain chance up to ${pop}%`);
+    return out.join(' · ');
+  }
+
+  // Hourly cloud bars from sunset to sunrise; star windows shaded, moon-up hours dotted.
+  function hoursHTML(hrs) {
+    if (!hrs.length) return '<p class="hsum">Hourly detail isn’t available this far out.</p>';
+    const cols = `style="grid-template-columns:repeat(${hrs.length},minmax(0,1fr))"`;
+    const cls = h => [h.evening || h.morning ? 'win' : '', h.past ? 'past' : ''].filter(Boolean).join(' ');
+    const bars = hrs.map(h => `<div class="hb ${cls(h)}" title="${h.label}: ${h.cloud}% cloud${h.moonUp ? ', moon up' : ''}${h.haze ? ', ' + h.haze : ''}">
+      <span class="pct">${h.cloud}</span><i style="height:${Math.max(2, Math.round(h.cloud * 0.54))}px"></i></div>`).join('');
+    const moon = hrs.map(h => `<span class="${cls(h)}">${h.moonUp ? '<b></b>' : ''}</span>`).join('');
+    const labels = hrs.map((h, i) => `<span class="${cls(h)}">${i % 2 ? '' : h.label}</span>`).join('');
+    return `<div class="hours" role="img" aria-label="Hourly cloud cover: ${esc(hrs.map(h => `${h.label} ${h.cloud}%`).join(', '))}">
+  <div class="hrow hbars" ${cols}>${bars}</div>
+  <div class="hrow hmoon" ${cols}>${moon}</div>
+  <div class="hrow hlabels" ${cols}>${labels}</div>
+</div>
+<div class="hlegend"><span><i class="sw win"></i>Star windows</span><span><i class="sw bar"></i>Cloud %</span><span><b></b>Moon up</span></div>
+<p class="hsum">${esc(hoursSummary(hrs))}</p>`;
+  }
+
   function outlookHTML(nights) {
     let rows = '', farNoted = false;
     for (const n of nights) {
@@ -393,11 +442,13 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
         farNoted = true;
         rows += '<tr class="far-note"><td colspan="4">Low confidence: forecasts this far out often change.</td></tr>';
       }
-      rows += `<tr class="${n.far ? 'far' : ''}">
+      const id = 'night-' + n.date.replace(/\W/g, '');
+      rows += `<tr class="night-row${n.far ? ' far' : ''}" data-night="${id}" tabindex="0" role="button" aria-expanded="false" aria-controls="${id}">
     <th scope="row"><span class="n">${esc(n.name)}${n.best ? ` ${icon('star', 13, 2, 'Best night', 'var(--star-icon)')}` : ''}</span><span class="s">${esc(n.date)}</span></th>
     <td class="mn">${moonIcon(n.moon.phase, n.moon.fraction, 20, n.moon.name + ' moon')}<span class="s">${n.moon.pct}%</span></td>
     ${slotCell(n.evening)}${slotCell(n.morning)}
-  </tr>`;
+  </tr>
+  <tr class="night-detail${n.far ? ' far' : ''}" id="${id}" hidden><td colspan="4">${hoursHTML(n.hours)}</td></tr>`;
     }
     return `<table class="outlook-table">
   <thead><tr><th scope="col">Night</th><th scope="col">Moon</th>
@@ -416,9 +467,99 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     outlookList.scrollTop = 0;
     if (typeof outlookSheet.showModal === 'function') outlookSheet.showModal(); else outlookSheet.setAttribute('open', '');
   }
+  function toggleNight(row) {
+    const detail = document.getElementById(row.dataset.night);
+    const open = detail.hidden;
+    detail.hidden = !open;
+    row.setAttribute('aria-expanded', String(open));
+    row.classList.toggle('open', open);
+  }
+  outlookList.addEventListener('click', e => {
+    const row = e.target.closest('.night-row');
+    if (row) toggleNight(row);
+  });
+  outlookList.addEventListener('keydown', e => {
+    const row = e.target.closest('.night-row');
+    if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); toggleNight(row); }
+  });
+
   function closeOutlook() { if (outlookSheet.open) outlookSheet.close ? outlookSheet.close() : outlookSheet.removeAttribute('open'); }
   document.getElementById('outlook-close').addEventListener('click', closeOutlook);
   outlookSheet.addEventListener('click', e => { if (e.target === outlookSheet) closeOutlook(); });
+
+  /* ---------- moon phase explainer ---------- */
+
+  const WIKI = 'https://en.wikipedia.org/wiki/';
+  const PHASE_INFO = {
+    'New moon': {
+      wiki: 'New_moon',
+      body: 'The <b>new moon</b> is the first lunar phase, when the Moon lies roughly between Earth and the Sun. Its sunlit side faces away from us, so the Moon is effectively invisible, lost in the Sun’s glare. It rises and sets with the Sun.',
+      sky: 'The darkest nights of the month. Moonlight adds nothing to the sky, so faint galaxies, nebulae and the Milky Way are at their best.'
+    },
+    'Waxing crescent': {
+      wiki: 'Lunar_phase',
+      body: 'A <b>waxing crescent</b> is a thin, growing sliver of Moon seen in the western sky after sunset, in the days after new moon. <i>Waxing</i> means the lit portion is increasing; <i>crescent</i> comes from the Latin <i>crescere</i>, “to grow”. The unlit part often glows faintly with <i>earthshine</i>, sunlight reflected off Earth.',
+      sky: 'Sets a few hours after the Sun, so the rest of the night is dark. A good time for deep-sky viewing once it has set.'
+    },
+    'First quarter': {
+      wiki: 'Lunar_phase',
+      body: 'At <b>first quarter</b>, about a week after new moon, the Moon has completed a quarter of its orbit and appears exactly half lit (the right half, seen from the Northern Hemisphere). It rises around midday and sets around midnight.',
+      sky: 'The evening sky is moderately bright, but after the Moon sets near midnight the sky is dark. Craters along the shadow line (the <i>terminator</i>) look sharp through binoculars.'
+    },
+    'Waxing gibbous': {
+      wiki: 'Lunar_phase',
+      body: 'A <b>waxing gibbous</b> Moon is more than half lit and still growing toward full. <i>Gibbous</i> comes from the Latin <i>gibbus</i>, “hump”, for its bulging shape. It rises in the afternoon and sets after midnight, getting later each night.',
+      sky: 'Bright moonlight fills most of the night. The darkest stretch is the pre-dawn window, after the Moon has set.'
+    },
+    'Full moon': {
+      wiki: 'Full_moon',
+      body: 'The <b>full moon</b> occurs when the Moon is opposite the Sun in the sky, so the whole face we see is lit. It rises around sunset, sets around sunrise and is up all night. Traditional names mark each month’s full moon, such as the Harvest and Hunter’s moons in autumn.',
+      sky: 'The brightest night of the month. Moonlight washes out the Milky Way and faint objects, though bright planets, stars and the Moon itself are still rewarding.'
+    },
+    'Waning gibbous': {
+      wiki: 'Lunar_phase',
+      body: 'A <b>waning gibbous</b> Moon is past full and shrinking, but still more than half lit. <i>Waning</i> means the lit portion is decreasing. It rises after sunset, about 50 minutes later each night, and is still up after sunrise.',
+      sky: 'The early evening, before moonrise, is dark. Once the Moon is up, the rest of the night is bright.'
+    },
+    'Last quarter': {
+      wiki: 'Lunar_phase',
+      body: 'At <b>last quarter</b> (also called third quarter), about three weeks after new moon, the Moon is again half lit, this time the left half seen from the Northern Hemisphere. It rises around midnight and sets around midday.',
+      sky: 'Evenings are dark until the Moon rises near midnight, which makes this a good phase for early-night stargazing.'
+    },
+    'Waning crescent': {
+      wiki: 'Lunar_phase',
+      body: 'A <b>waning crescent</b> is the thinning sliver before the next new moon, seen low in the east in the hours before dawn. Like the waxing crescent, its dark part may show faint earthshine.',
+      sky: 'Rises only shortly before the Sun, so nearly the whole night is dark. Excellent for deep-sky viewing.'
+    }
+  };
+
+  const moonSheet = document.getElementById('moon-info');
+  function openMoonInfo(place, anchor) {
+    const rec = state.wx[place.id];
+    let m = null;
+    try { m = rec && L.build(place, rec, Date.now()); } catch (e) { console.error(e); }
+    if (!m) return;
+    const moon = m.stars.moon, info = PHASE_INFO[moon.name];
+    if (!info) return;
+    const age = moon.phase * 29.53;
+    moonSheet.innerHTML = `<div class="pop-head">
+    ${moonIcon(moon.phase, moon.fraction, 56, moon.name + ' moon')}
+    <div><h2 id="moon-info-title">${esc(moon.name)}</h2><span class="s">Lunar phase · day ${Math.round(age)} of 29.5</span></div>
+    <button type="button" class="icon-btn" data-close aria-label="Close">${icon('close', 20, 1.8)}</button>
+  </div>
+  <p>${info.body}</p>
+  <h3>For stargazing</h3>
+  <p>${info.sky}</p>
+  <a href="${WIKI}${info.wiki}" target="_blank" rel="noopener">Read more on Wikipedia →</a>`;
+    if (typeof moonSheet.showModal === 'function') moonSheet.showModal(); else moonSheet.setAttribute('open', '');
+    // Anchor the card just below the tapped name, like a link preview, keeping it on screen.
+    const r = (anchor.closest('.moon') || anchor).getBoundingClientRect();
+    const h = moonSheet.offsetHeight, vh = window.innerHeight;
+    const top = r.bottom + 8 + h <= vh - 12 ? r.bottom + 8 : Math.max(12, r.top - 8 - h);
+    moonSheet.style.top = Math.max(12, Math.min(top, vh - h - 12)) + 'px';
+  }
+  function closeMoonInfo() { if (moonSheet.open) moonSheet.close ? moonSheet.close() : moonSheet.removeAttribute('open'); }
+  moonSheet.addEventListener('click', e => { if (e.target === moonSheet || e.target.closest('[data-close]')) closeMoonInfo(); });
 
   /* ---------- places sheet ---------- */
 
