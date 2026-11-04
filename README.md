@@ -31,5 +31,6 @@ When you change any shell file, bump `VERSION` in `sw.js` so installed copies pi
 - `index.html`, `styles.css` — layout and light/dark themes
 - `logic.js` — forecast model and stargazing verdicts (no DOM; also runs in Node)
 - `app.js` — rendering, caching, places, refresh
+- `img/sky/` — painted background skies (light/dark theme × day/night × clear, partly, cloudy, fog, rain, snow); regenerate with `node tools/paint-skies.js` (needs Playwright)
 - `sw.js`, `manifest.json`, `icons/` — PWA
 - `vendor/suncalc.js` (BSD-2), `fonts/manrope.woff2` (OFL)

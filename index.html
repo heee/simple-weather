@@ -34,6 +34,13 @@
     <input id="places-search" type="search" placeholder="Add a city or zip" autocomplete="off" autocapitalize="words" enterkeyhint="search" aria-label="Search for a place to add">
   </label>
   <ul id="places-results" class="place-list results"></ul>
+  <div class="units-row">
+    <span>Units</span>
+    <div class="seg" id="units" role="group" aria-label="Temperature unit">
+      <button type="button" data-unit="F" aria-pressed="true">°F</button>
+      <button type="button" data-unit="C" aria-pressed="false">°C</button>
+    </div>
+  </div>
 </dialog>
 
 <dialog id="outlook" class="sheet" aria-labelledby="outlook-title">

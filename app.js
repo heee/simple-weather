@@ -76,54 +76,13 @@
 
   /* ---------- background scenery ---------- */
 
-  function seeded(seed) {
-    let s = seed;
-    return () => (s = (s * 16807) % 2147483647) / 2147483647;
-  }
-  const clouds = (op, fill) => `<g style="fill:var(${fill});opacity:${op}">
-<ellipse cx="92" cy="196" rx="78" ry="26"/><ellipse cx="146" cy="174" rx="54" ry="40"/><ellipse cx="96" cy="182" rx="38" ry="30"/><ellipse cx="198" cy="194" rx="60" ry="26"/></g>
-<g style="fill:var(${fill});opacity:${op * 0.78}"><ellipse cx="300" cy="250" rx="62" ry="18"/><ellipse cx="326" cy="236" rx="36" ry="24"/><ellipse cx="282" cy="242" rx="26" ry="18"/></g>
-<g style="fill:var(${fill});opacity:${op * 0.6}"><ellipse cx="20" cy="318" rx="60" ry="16"/><ellipse cx="40" cy="306" rx="30" ry="18"/></g>`;
-  const highClouds = (op, fill) => `<g style="fill:var(${fill});opacity:${op}">
-<ellipse cx="300" cy="90" rx="96" ry="30"/><ellipse cx="250" cy="70" rx="64" ry="40"/><ellipse cx="340" cy="64" rx="54" ry="34"/>
-<ellipse cx="70" cy="130" rx="90" ry="28"/><ellipse cx="110" cy="112" rx="50" ry="32"/></g>`;
-  const sun = op => `<g style="opacity:var(--sun-op)">
-<circle cx="318" cy="78" r="150" fill="#FFE6AE" opacity="${0.28 * op}"/><circle cx="318" cy="78" r="96" fill="#FFDD94" opacity="${0.35 * op}"/><circle cx="318" cy="78" r="54" fill="#FFD27A" opacity="${0.55 * op}"/></g>`;
-  function streaks() {
-    const rnd = seeded(7);
-    let out = '<g style="stroke:var(--sky-streak)" stroke-width="1.2" stroke-linecap="round" opacity=".35">';
-    for (let i = 0; i < 22; i++) {
-      const x = 20 + rnd() * 370, y = 150 + rnd() * 220;
-      out += `<path d="M${x.toFixed(0)} ${y.toFixed(0)}l-8 20"/>`;
-    }
-    return out + '</g>';
-  }
-  function starfield(count) {
-    const rnd = seeded(42);
-    let out = `<ellipse cx="210" cy="200" rx="260" ry="60" transform="rotate(-28 210 200)" style="fill:var(--sky-band)" opacity=".07"/>
-<ellipse cx="210" cy="200" rx="200" ry="28" transform="rotate(-28 210 200)" style="fill:var(--sky-band)" opacity=".06"/><g style="fill:var(--sky-star)">`;
-    for (let i = 0; i < count; i++) {
-      const x = rnd() * 390, y = rnd() * 460, r = 0.7 + rnd() * 0.9, o = 0.4 + rnd() * 0.5;
-      out += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r.toFixed(2)}" opacity="${o.toFixed(2)}"/>`;
-    }
-    return out + '</g>';
-  }
-  const moonGlow = '<g fill="#FFF4D6"><circle cx="306" cy="70" r="110" opacity=".05"/><circle cx="306" cy="70" r="60" opacity=".07"/><circle cx="306" cy="70" r="22" opacity=".14"/></g>';
-
+  // Painted skies (tools/paint-skies.js), one per weather group, day/night, light/dark theme.
   function scenery(m) {
-    const g = L.group(m.cur.code);
-    const night = !m.cur.isDay;
-    let body;
-    if (night) {
-      if (g === 'clear') body = starfield(60) + (m.stars.moon.upNow ? moonGlow : '');
-      else if (g === 'partly') body = starfield(34) + (m.stars.moon.upNow ? moonGlow : '') + highClouds(0.55, '--sky-cloud');
-      else body = clouds(0.45, '--sky-grey') + (g === 'rain' || g === 'thunder' ? streaks() : '');
-    } else if (g === 'clear') body = sun(1);
-    else if (g === 'partly') body = sun(1) + clouds(0.9, '--sky-cloud');
-    else if (g === 'rain' || g === 'thunder') body = clouds(0.85, '--sky-grey') + streaks();
-    else body = highClouds(0.6, '--sky-cloud') + clouds(0.8, '--sky-cloud');
-    const h = night ? 520 : 440;
-    return `<div class="scenery${night ? ' night' : ''}" aria-hidden="true"><svg viewBox="0 0 390 ${h}" preserveAspectRatio="xMaxYMin slice" fill="none">${body}</svg></div>`;
+    let g = L.group(m.cur.code);
+    if (g === 'thunder') g = 'rain';
+    const t = m.cur.isDay ? 'day' : 'night';
+    const moonlit = !m.cur.isDay && (g === 'clear' || g === 'partly') && m.stars.moon.upNow;
+    return `<div class="scenery${moonlit ? ' moonlit' : ''}" style="--sky-light:url(img/sky/light-${t}-${g}.webp);--sky-dark:url(img/sky/dark-${t}-${g}.webp)" aria-hidden="true"></div>`;
   }
 
   /* ---------- formatting ---------- */
@@ -144,7 +103,7 @@
     if (rec) {
       const age = Date.now() - rec.fetchedAt;
       const tag = age > STALE_AFTER ? (navigator.onLine === false ? ' · offline' : ' · stale') : '';
-      updated = `<span class="${tag ? 'stale' : ''}">Updated ${L.time(rec.fetchedAt, undefined, true)}${tag}</span>`;
+      if (tag) updated = `<span class="stale">Updated ${L.time(rec.fetchedAt, undefined, true)}${tag}</span>`;
     } else if (loading) updated = '<span>Loading…</span>';
     const dots = state.places.map((_, i) => `<span class="${i === idx ? 'on' : ''}"></span>`).join('');
     return `<div class="header">
@@ -157,26 +116,21 @@
   </div>
 </div>
 ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’t refresh. Showing the saved forecast.</div>' : ''}
-<div class="dots" role="img" aria-label="Place ${idx + 1} of ${state.places.length}">${dots}</div>`;
+${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${idx + 1} of ${state.places.length}">${dots}</div>` : ''}`;
   }
 
   function currentHTML(m) {
-    const c = m.cur;
-    const units = ['F', 'C'].map(u =>
-      `<button type="button" data-act="units" data-unit="${u}" aria-pressed="${state.units === u}">°${u}</button>`).join('');
+    const c = m.cur, t = m.today;
     return `<section class="current" aria-label="Current conditions">
   <div class="current-top">
     <div class="temp">${deg(c.temp)}</div>
     <div class="cond">
       ${icon(c.icon, m.isNight ? 40 : 48, 1.5, c.label)}
       <div class="cond-text">${esc(c.label)}</div>
-      <div class="seg" role="group" aria-label="Temperature unit">${units}</div>
+      <div class="hl">H ${deg(t.hi)}&nbsp;&nbsp;<span class="lo">L ${deg(t.lo)}</span></div>
     </div>
   </div>
-  <div class="chips">
-    <div class="chip">${icon('thermo', 20, 1.8, null, 'var(--muted)')}<div><span class="k">Feels like</span><span class="v">${deg(c.feels)}</span></div></div>
-    <div class="chip">${icon('wind', 20, 1.8, null, 'var(--muted)')}<div><span class="k">Wind</span><span class="v">${c.dir} ${speed(c.wind)}</span></div></div>
-  </div>
+  <div class="meta">Feels like ${deg(c.feels)} · Wind ${c.dir} ${speed(c.wind)}</div>
 </section>`;
   }
 
@@ -189,9 +143,8 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     ${t.anyRain ? `<span class="r">${s.pop >= 20 ? s.pop + '% rain' : ''}</span>` : ''}
   </div>`).join('');
     return `<section class="card" aria-label="Today">
-  <div class="card-head"><span class="label">Today</span><span class="hl">H ${deg(t.hi)}&nbsp;&nbsp;<span class="lo">L ${deg(t.lo)}</span></span></div>
+  <span class="label">Today</span>
   <div class="snaps">${snaps}</div>
-  ${t.anyRain ? '' : `<div class="no-rain">${icon('drop', 16, 1.8)}<span>No rain expected today</span></div>`}
 </section>`;
   }
 
@@ -208,13 +161,17 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
   </div>`;
   }
 
+  // Daytime: one line for the better of tonight / pre-dawn; details live in the outlook sheet.
   function starsHTML(m) {
-    const s = m.stars;
-    const best = s.best ? `<span class="pill ${s.best.verdict.cls}">Best: ${s.best.kind === 'tonight' ? 'tonight' : 'pre-dawn'}</span>` : '';
-    return `<section class="card stars" aria-label="Stargazing">
-  <div class="card-head"><span class="label">Stars</span>${best}</div>
-  ${winRow(s.tonight)}${winRow(s.predawn)}
-  ${moonHTML(s.moon, 36)}
+    const s = m.stars, moon = s.moon;
+    const w = s.best || (s.tonight.none ? s.predawn : s.tonight);
+    const name = (w.name || 'Tonight').toLowerCase();
+    return `<section class="card stars compact" aria-label="Stargazing">
+  <div class="moon">
+    <button type="button" class="moon-btn" data-act="moon" aria-haspopup="dialog" aria-label="${esc(moon.name)} moon, ${moon.pct}% lit">${moonIcon(moon.phase, moon.fraction, 34, moon.name + ' moon')}</button>
+    <div><span class="n">Stars ${esc(name)}</span><span class="n v-${w.verdict.cls}"> · ${esc(w.verdict.text)}</span><span class="s">${esc(w.when)}</span></div>
+    <button type="button" class="icon-btn" data-act="outlook" aria-label="Star outlook for the next 10 nights">${icon('outlook', 22, 1.6)}</button>
+  </div>
 </section>`;
   }
 
@@ -225,9 +182,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
   <div class="hero-main">
     <span class="hero-verdict v-${h.win.verdict.cls}">${esc(h.win.verdict.text)}</span>
     <span class="hero-sum">${esc(h.summary)}</span>
-    ${h.dark ? `<span class="hero-dark">${esc(h.dark)}</span>` : ''}
   </div>
-  ${h.other.none ? '' : winRow(h.other)}
   ${moonHTML(m.stars.moon, 40)}
 </section>`;
   }
@@ -356,11 +311,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     const place = state.places.find(p => p.id === page.dataset.id);
     const act = btn.dataset.act;
     if (act === 'refresh' && place) refresh(place);
-    else if (act === 'units') {
-      state.units = btn.dataset.unit;
-      store.set('sw.units', state.units);
-      renderAll();
-    } else if (act === 'places') openPlaces();
+    else if (act === 'places') openPlaces();
     else if (act === 'outlook' && place) openOutlook(place);
     else if (act === 'moon' && place) openMoonInfo(place, btn);
   });
@@ -572,7 +523,21 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
   const US_STATES = { Alabama: 'AL', Alaska: 'AK', Arizona: 'AZ', Arkansas: 'AR', California: 'CA', Colorado: 'CO', Connecticut: 'CT', Delaware: 'DE', 'District of Columbia': 'DC', Florida: 'FL', Georgia: 'GA', Hawaii: 'HI', Idaho: 'ID', Illinois: 'IL', Indiana: 'IN', Iowa: 'IA', Kansas: 'KS', Kentucky: 'KY', Louisiana: 'LA', Maine: 'ME', Maryland: 'MD', Massachusetts: 'MA', Michigan: 'MI', Minnesota: 'MN', Mississippi: 'MS', Missouri: 'MO', Montana: 'MT', Nebraska: 'NE', Nevada: 'NV', 'New Hampshire': 'NH', 'New Jersey': 'NJ', 'New Mexico': 'NM', 'New York': 'NY', 'North Carolina': 'NC', 'North Dakota': 'ND', Ohio: 'OH', Oklahoma: 'OK', Oregon: 'OR', Pennsylvania: 'PA', 'Rhode Island': 'RI', 'South Carolina': 'SC', 'South Dakota': 'SD', Tennessee: 'TN', Texas: 'TX', Utah: 'UT', Vermont: 'VT', Virginia: 'VA', Washington: 'WA', 'West Virginia': 'WV', Wisconsin: 'WI', Wyoming: 'WY', 'Puerto Rico': 'PR' };
   const regionOf = r => r.country_code === 'US' ? (US_STATES[r.admin1] || r.admin1 || 'US') : (r.country || r.admin1 || '');
 
+  const unitsSeg = document.getElementById('units');
+  function renderUnits() {
+    unitsSeg.querySelectorAll('[data-unit]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.unit === state.units)));
+  }
+  unitsSeg.addEventListener('click', e => {
+    const b = e.target.closest('[data-unit]');
+    if (!b) return;
+    state.units = b.dataset.unit;
+    store.set('sw.units', state.units);
+    renderUnits();
+    renderAll();
+  });
+
   function renderPlaces() {
+    renderUnits();
     const only = state.places.length === 1;
     list.innerHTML = state.places.map((p, i) => `<li>
   <div class="grow"><b>${esc(p.name)}</b><span>${esc(p.region)}</span></div>
