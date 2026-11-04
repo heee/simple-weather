@@ -1,6 +1,6 @@
 // App-shell cache. Forecast data lives in localStorage, so the API is never cached here.
 // Bump VERSION whenever a shell file changes.
-const VERSION = 'sw-v5';
+const VERSION = 'sw-v6';
 const SHELL = [
   './',
   'index.html',
@@ -19,7 +19,11 @@ const SHELL = [
 ];
 
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  // cache: 'reload' skips the browser's HTTP cache (GitHub Pages allows 10 minutes),
+  // so a new version never gets filled with the previous version's files.
+  event.waitUntil(caches.open(VERSION)
+    .then(c => c.addAll(SHELL.map(url => new Request(url, { cache: 'reload' }))))
+    .then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', event => {
