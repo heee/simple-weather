@@ -4,9 +4,8 @@
   const L = window.SWLogic;
   const MIN = 6e4, HOUR = 36e5;
   const TIMEOUT_MS = 8000;
-  const REFETCH_AFTER = 15 * MIN;
+  const REFETCH_AFTER = 5 * MIN; // refresh automatically once the saved forecast is older than this
   const STALE_AFTER = 3 * HOUR;
-  const SHOW_REFRESH_AFTER = 5 * MIN;
   const DEFAULT_PLACES = [{ id: '29.760,-95.370', name: 'Houston', region: 'TX', lat: 29.76, lon: -95.37 }];
 
   /* ---------- storage (every access guarded: private mode etc.) ---------- */
@@ -47,7 +46,6 @@
     snow: CLOUD_HI + '<path d="M8.5 18.5h.01M12.5 18.5h.01M16.5 18.5h.01M10.5 21.5h.01M14.5 21.5h.01" stroke-width="2.4"/>',
     thermo: '<path d="M14 14.8V5a2 2 0 1 0-4 0v9.8a4 4 0 1 0 4 0z"/>',
     wind: '<path d="M3 8h10a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h7"/>',
-    refresh: '<path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/>',
     drop: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
     star: '<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>',
     chevron: '<path d="M6 9l6 6 6-6"/>',
@@ -115,18 +113,14 @@
       const tag = age > STALE_AFTER ? (navigator.onLine === false ? ' · offline' : ' · stale') : '';
       if (tag) updated = `<span class="stale">Updated ${L.time(rec.fetchedAt, undefined, true)}${tag}</span>`;
     } else if (loading) updated = '<span>Loading…</span>';
-    // Refresh only when the data is over 5 minutes old, or while loading or after a failed refresh.
-    const showRefresh = !rec || loading || state.failed.has(place.id) || Date.now() - rec.fetchedAt > SHOW_REFRESH_AFTER;
-    // Page dots sit at the right of the header row, before refresh when it shows (2+ places only).
+    // Page dots sit at the right of the header row (2+ places only).
     const n = state.places.length;
     const dots = n > 1 ? `<div class="dots" role="img" aria-label="Place ${idx + 1} of ${n}">${state.places.map((_, i) => `<span class="${i === idx ? 'on' : ''}"></span>`).join('')}</div>` : '';
     return `<div class="header">
   <button type="button" class="place-btn" data-act="places" aria-label="${esc(title)}${place.region ? ', ' + esc(place.region) : ''}${local ? ', local time ' + local : ''}. Manage places">
     <span class="place-name"><span class="city">${esc(title)}</span>${icon('chevron', 14, 2)}</span>${local ? `<span class="place-time">${local}</span>` : ''}
   </button>${dots}
-  ${updated || showRefresh ? `<div class="updated">${updated}${showRefresh ? `
-    <button type="button" class="icon-btn${loading ? ' spinning' : ''}" data-act="refresh" aria-label="Refresh">${icon('refresh', 20, 1.8)}</button>` : ''}
-  </div>` : ''}
+  ${updated ? `<div class="updated">${updated}</div>` : ''}
 </div>
 ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’t refresh. Showing the saved forecast.</div>' : ''}`;
   }
@@ -315,8 +309,10 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     return 'https://api.open-meteo.com/v1/forecast?' + q;
   }
 
+  const lastTry = new Map(); // place id -> time of the last attempt, so failures retry every 5 min, not every minute
   async function refresh(place) {
     if (state.loading.has(place.id)) return;
+    lastTry.set(place.id, Date.now());
     state.loading.add(place.id);
     renderPage(place.id);
     try {
@@ -339,11 +335,16 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     for (const p of order) {
       if (!p) continue;
       const rec = state.wx[p.id];
-      if (test(rec)) await refresh(p);
+      if (test(rec, p)) await refresh(p);
     }
   }
   const refreshAll = () => refreshWhere(() => true);
-  const refreshOld = () => refreshWhere(rec => !rec || Date.now() - rec.fetchedAt > REFETCH_AFTER);
+  // Places whose forecast is over 5 minutes old; `retryNow` skips the back-off (e.g. back online).
+  const refreshOld = (retryNow = false) => refreshWhere((rec, p) => {
+    const now = Date.now();
+    const old = !rec || now - rec.fetchedAt > REFETCH_AFTER;
+    return old && (retryNow === true || !lastTry.has(p.id) || now - lastTry.get(p.id) > REFETCH_AFTER);
+  });
 
   /* ---------- interactions ---------- */
 
@@ -365,8 +366,8 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     renderAll();
     refreshOld();
   });
-  window.addEventListener('online', refreshOld);
-  setInterval(() => { if (document.visibilityState === 'visible') renderAll(); }, MIN);
+  window.addEventListener('online', () => refreshOld(true));
+  setInterval(() => { if (document.visibilityState === 'visible') { renderAll(); refreshOld(); } }, MIN);
 
   /* ---------- star outlook sheet ---------- */
 
