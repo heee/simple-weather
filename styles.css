@@ -175,7 +175,9 @@ a { color: var(--rain); }
 
 /* ---- current ---- */
 
-.current { display: flex; flex-direction: column; gap: 12px; padding: 4px 4px 0; }
+/* Left edge lines up with the cards' text (16px inset); the right edge with the calendar icon's outline. */
+.current { display: flex; flex-direction: column; gap: 12px; padding: 4px 21px 0 16px; }
+.current .temp { margin-left: -0.06em; } /* cancels the digits' built-in side bearing */
 .current-top { display: flex; justify-content: space-between; align-items: center; }
 .temp {
   font-size: 96px; font-weight: 300; line-height: 1; letter-spacing: -3px;
