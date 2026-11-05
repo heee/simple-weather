@@ -230,6 +230,12 @@ check('after nautical dawn the day layout returns: no hero, outlook starts with 
   assert.strictEqual(m.stars.outlook[0].date, 'Oct 22');
 });
 
+check('today card: sunrise and sunset in the place\'s time zone', () => {
+  const t = run(clear, '2026-10-21T20:00:00Z').today; // Houston, 21 Oct: sunrise ~7:28 am, sunset ~6:45 pm (USNO)
+  assert.ok(/^7:2\d am$/.test(t.sunrise), t.sunrise);
+  assert.ok(/^6:4\d pm$/.test(t.sunset), t.sunset);
+});
+
 // ---- share text ----
 check('share text: next Great window, else best, else none', () => {
   const w = (kind, score, text, extra = {}) => ({ kind, start: at('2026-10-24T10:00:00Z'), when: kind === 'tonight' ? '7:05 pm – 1 am' : '4:30 – 6:10 am', cloud: 5, verdict: { score, text }, ...extra });

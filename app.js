@@ -49,6 +49,8 @@
     drop: '<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
     star: '<path d="M12 3l2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.4 6.7 19.4l1.2-6L3.4 9.3l6-.7z"/>',
     chevron: '<path d="M6 9l6 6 6-6"/>',
+    sunrise: '<path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 4v5M9.5 6.5L12 4l2.5 2.5M4.9 11.9l1.4 1.4M19.1 11.9l-1.4 1.4"/>',
+    sunset: '<path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 9V4M9.5 6.5L12 9l2.5-2.5M4.9 11.9l1.4 1.4M19.1 11.9l-1.4 1.4"/>',
     close: '<path d="M6 6l12 12M18 6L6 18"/>',
     outlook: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M12 12.6l.85 1.8 1.85.85-1.85.85-.85 1.8-.85-1.8-1.85-.85 1.85-.85z"/>',
     trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'
@@ -152,8 +154,10 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     <span class="v">${deg(s.temp)}</span>
     ${t.anyRain ? `<span class="r">${s.pop >= 20 ? s.pop + '% rain' : ''}</span>` : ''}
   </div>`).join('');
+    const sun = [t.sunrise && `<span class="sun-t" aria-label="Sunrise ${t.sunrise}">${icon('sunrise', 16, 1.7)}${t.sunrise}</span>`,
+      t.sunset && `<span class="sun-t" aria-label="Sunset ${t.sunset}">${icon('sunset', 16, 1.7)}${t.sunset}</span>`].filter(Boolean).join('');
     return `<section class="card glass" aria-label="Today">
-  <span class="label">Today</span>
+  <div class="card-head today-head"><span class="label">Today</span>${sun ? `<span class="sun-times">${sun}</span>` : ''}</div>
   <div class="snaps">${snaps}</div>
 </section>`;
   }

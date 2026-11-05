@@ -214,6 +214,8 @@
     });
     const todayCard = {
       hi: D.temperature_2m_max[ti], lo: D.temperature_2m_min[ti], snaps,
+      // In the place's own time zone, e.g. "6:35 am"; empty where the sun doesn't rise or set (polar day/night).
+      sunrise: isNaN(sunrise) ? '' : time(sunrise, tz, true), sunset: isNaN(sunset) ? '' : time(sunset, tz, true),
       anyRain: snaps.some(s => !s.missing && s.pop >= 20)
     };
 
