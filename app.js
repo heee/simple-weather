@@ -25,7 +25,8 @@
     wx: {},
     loading: new Set(),
     failed: new Set(),
-    active: 0
+    active: 0,
+    weekOpen: false
   };
   if (!Array.isArray(state.places) || !state.places.length) state.places = DEFAULT_PLACES.slice();
   for (const p of state.places) state.wx[p.id] = store.get(wxKey(p.id), null);
@@ -142,7 +143,7 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
     <span class="v">${deg(s.temp)}</span>
     ${t.anyRain ? `<span class="r">${s.pop >= 20 ? s.pop + '% rain' : ''}</span>` : ''}
   </div>`).join('');
-    return `<section class="card" aria-label="Today">
+    return `<section class="card glass" aria-label="Today">
   <span class="label">Today</span>
   <div class="snaps">${snaps}</div>
 </section>`;
@@ -200,7 +201,20 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
     <span class="hi">${deg(d.hi)}</span>
   </div>`;
     }).join('');
-    return `<section class="card week" aria-label="7-day forecast"><span class="label">7 days</span><div role="list">${rows}</div></section>`;
+    const open = state.weekOpen;
+    return `<section class="card glass week${open ? ' open' : ''}" aria-label="7-day forecast">
+  <button type="button" class="week-head" data-act="week" aria-expanded="${open}">
+    <span class="label">7 days</span><span class="week-sum">${esc(weekSummary(m))}</span>${icon('chevron', 16, 2)}
+  </button>
+  ${open ? `<div role="list">${rows}</div>` : ''}
+</section>`;
+  }
+
+  // Collapsed 7-day line: the week's range and which days look wet (40%+), e.g. "55°–78° · rain Thu, Fri".
+  function weekSummary(m) {
+    const wet = m.days.filter(d => d.pop >= 40).map(d => d.name === 'Today' ? 'today' : d.name);
+    const rain = !wet.length ? 'dry' : wet.length > 3 ? `rain ${wet.length} days` : 'rain ' + wet.join(', ');
+    return `${deg(m.weekMin)}–${deg(m.weekMax)} · ${rain}`;
   }
 
   function pageHTML(place, idx) {
@@ -311,6 +325,7 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
     const act = btn.dataset.act;
     if (act === 'refresh' && place) refresh(place);
     else if (act === 'places') openPlaces();
+    else if (act === 'week') { state.weekOpen = !state.weekOpen; renderAll(); }
     else if (act === 'outlook' && place) openOutlook(place);
     else if (act === 'moon' && place) openMoonInfo(place, btn);
   });
