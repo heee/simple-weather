@@ -405,5 +405,29 @@
       .map(x => x.r);
   }
 
-  root.SWLogic = { placeQueries, placeMatches, rankPlaces, build, parts, time, span, group, label, iconName, compass, phaseName, verdict, cloudClass, hazeClass, moonEvents };
+  /* ---------- share text for the star outlook ---------- */
+
+  // "tonight", "Sat evening", "early tomorrow morning", "early Sun morning", "this morning".
+  function windowLabel(n, w, tz) {
+    const current = n.name === 'Tonight' || n.name === 'Now';
+    if (w.kind === 'tonight') return current ? 'tonight' : `${n.name} evening`;
+    if (n.name === 'Now') return 'this morning';
+    return n.name === 'Tonight' ? 'early tomorrow morning' : `early ${parts(w.start, tz).wd} morning`;
+  }
+
+  // Points to the next window rated Great; otherwise the best one; otherwise says none look good.
+  function shareText(placeName, outlook, tz) {
+    const slots = [];
+    for (const n of outlook) for (const w of [n.evening, n.morning]) {
+      if (!w.none && !w.past && !w.noData && w.verdict.score > 0) slots.push({ n, w });
+    }
+    const head = `Stargazing in ${placeName} 🌌`;
+    const great = slots.find(s => s.w.verdict.score >= 4);
+    if (great) return `${head}\nNext great window: ${windowLabel(great.n, great.w, tz)}, ${great.w.when} (${great.w.cloud}% cloud).`;
+    const best = slots.find(s => s.w.best) || slots[0];
+    if (best) return `${head}\nNo great windows in the next ${outlook.length} nights. Best bet: ${windowLabel(best.n, best.w, tz)}, ${best.w.when} (${best.w.verdict.text.split(' · ')[0]}, ${best.w.cloud}% cloud).`;
+    return `${head}\nNo good windows in the next ${outlook.length} nights.`;
+  }
+
+  root.SWLogic = { shareText, placeQueries, placeMatches, rankPlaces, build, parts, time, span, group, label, iconName, compass, phaseName, verdict, cloudClass, hazeClass, moonEvents };
 })(typeof window !== 'undefined' ? window : globalThis);

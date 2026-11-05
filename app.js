@@ -60,17 +60,23 @@
   }
 
   // Lit part of the moon drawn as an outer limb plus an elliptical terminator.
-  function moonIcon(phase, fraction, size, label) {
+  // Path of the lit part in a 40x40 box ('' when new, 'full' when full).
+  function moonLitPath(phase, fraction) {
     const r = 18, c = 20;
+    if (fraction > 0.99) return 'full';
+    if (fraction < 0.01) return '';
     const k = Math.cos(2 * Math.PI * phase);
     const rx = Math.abs(k) * r;
     const waxing = phase < 0.5;
     const crescent = k > 0;
     const limb = waxing ? 1 : 0;
     const term = waxing ? (crescent ? 0 : 1) : (crescent ? 1 : 0);
-    const lit = fraction < 0.01 ? '' :
-      `<path d="M${c} ${c - r} A${r} ${r} 0 0 ${limb} ${c} ${c + r} A${rx.toFixed(2)} ${r} 0 0 ${term} ${c} ${c - r}z" style="fill:var(--moon-lit)"/>`;
-    const full = fraction > 0.99 ? `<circle cx="${c}" cy="${c}" r="${r}" style="fill:var(--moon-lit)"/>` : '';
+    return `M${c} ${c - r} A${r} ${r} 0 0 ${limb} ${c} ${c + r} A${rx.toFixed(2)} ${r} 0 0 ${term} ${c} ${c - r}z`;
+  }
+  function moonIcon(phase, fraction, size, label) {
+    const r = 18, c = 20, d = moonLitPath(phase, fraction);
+    const lit = d && d !== 'full' ? `<path d="${d}" style="fill:var(--moon-lit)"/>` : '';
+    const full = d === 'full' ? `<circle cx="${c}" cy="${c}" r="${r}" style="fill:var(--moon-lit)"/>` : '';
     return `<svg width="${size}" height="${size}" viewBox="0 0 40 40" role="img" aria-label="${esc(label)}"><circle cx="${c}" cy="${c}" r="${r}" style="fill:var(--moon-dark)"/>${full || lit}</svg>`;
   }
 
@@ -411,6 +417,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
         rows += '<tr class="far-note"><td colspan="4">Low confidence: forecasts this far out often change.</td></tr>';
       }
       const id = 'night-' + n.date.replace(/\W/g, '');
+      rows += '<tr class="sep" aria-hidden="true"><td colspan="4"></td></tr>';
       rows += `<tr class="night-row${n.far ? ' far' : ''}" data-night="${id}" tabindex="0" role="button" aria-expanded="false" aria-controls="${id}">
     <th scope="row"><span class="n">${esc(n.name)}${n.best ? ` ${icon('star', 13, 2, 'Best night', 'var(--star-icon)')}` : ''}</span><span class="s">${esc(n.date)}</span></th>
     <td class="mn">${moonIcon(n.moon.phase, n.moon.fraction, 20, n.moon.name + ' moon')}<span class="s">${n.moon.pct}%</span></td>
@@ -433,6 +440,9 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     document.getElementById('outlook-sub').textContent = place.name;
     outlookList.innerHTML = outlookHTML(m.stars.outlook);
     outlookList.scrollTop = 0;
+    // Prepare the share image now: iOS only opens the share sheet straight after a tap.
+    shareReady = null;
+    sharePrep = prepareShare(place, m).then(d => (shareReady = d)).catch(e => { console.error(e); return null; });
     if (typeof outlookSheet.showModal === 'function') outlookSheet.showModal(); else outlookSheet.setAttribute('open', '');
   }
   function toggleNight(row) {
@@ -453,6 +463,121 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
 
   function closeOutlook() { if (outlookSheet.open) outlookSheet.close ? outlookSheet.close() : outlookSheet.removeAttribute('open'); }
   document.getElementById('outlook-close').addEventListener('click', closeOutlook);
+
+  /* ---------- share the star outlook: a drawn image plus a one-line message ---------- */
+
+  let sharePrep = null, shareReady = null;
+  const SHARE_COLORS = { good: '#63D6A8', fair: '#F2B36B', poor: '#9AA8BC' };
+
+  function loadImage(src) {
+    return new Promise((ok, fail) => { const i = new Image(); i.onload = () => ok(i); i.onerror = fail; i.src = src; });
+  }
+
+  async function drawOutlookImage(place, m) {
+    const nights = m.stars.outlook;
+    const W = 1080, pad = 56, headH = 150, colH = 104, rowH = 128, footH = 96;
+    const H = pad + headH + colH + rowH * nights.length + footH;
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const c = cv.getContext('2d');
+    try { await document.fonts.load('600 40px Manrope'); } catch { /* system font */ }
+    const font = (w, px) => `${w} ${px}px Manrope, -apple-system, Helvetica, sans-serif`;
+
+    // Night sky behind a translucent card, as in the app's dark theme.
+    c.fillStyle = '#0B1220'; c.fillRect(0, 0, W, H);
+    try {
+      const sky = await loadImage('img/sky/dark-night-clear.webp');
+      const h = W * sky.height / sky.width;
+      c.drawImage(sky, 0, 0, W, h);
+      const fade = c.createLinearGradient(0, h * 0.55, 0, h);
+      fade.addColorStop(0, 'rgba(11,18,32,0)'); fade.addColorStop(1, '#0B1220');
+      c.fillStyle = fade; c.fillRect(0, h * 0.55, W, h * 0.45 + 1);
+    } catch { /* plain background */ }
+
+    c.textBaseline = 'alphabetic';
+    c.fillStyle = '#E6ECF5'; c.font = font(600, 60); c.textAlign = 'left';
+    c.fillText('Star outlook', pad, pad + 70);
+    c.fillStyle = '#9AA8BC'; c.font = font(500, 40); c.textAlign = 'right';
+    c.fillText(place.name, W - pad, pad + 68);
+
+    const x0 = pad, cw = W - pad * 2, top = pad + headH;
+    const rr = 32;
+    c.fillStyle = 'rgba(21,30,48,.78)';
+    c.beginPath();
+    if (c.roundRect) c.roundRect(x0, top, cw, colH + rowH * nights.length, rr); else c.rect(x0, top, cw, colH + rowH * nights.length);
+    c.fill();
+
+    const cols = [x0 + 40, x0 + cw * 0.31, x0 + cw * 0.5, x0 + cw * 0.75];
+    const colW = cw * 0.25;
+    c.textAlign = 'left';
+    const heads = [['NIGHT'], ['MOON'], ['EVENING', 'dark → 1 am'], ['MORNING', '4:30 → dawn']];
+    heads.forEach(([h, s], i) => {
+      c.fillStyle = '#9AA8BC'; c.font = font(600, 26); c.fillText(h, cols[i], top + (s ? 46 : 62));
+      if (s) { c.font = font(500, 26); c.fillText(s, cols[i], top + 82); }
+    });
+
+    const divider = y => {
+      const g = c.createLinearGradient(x0, 0, x0 + cw, 0);
+      g.addColorStop(0, 'rgba(36,48,74,0)'); g.addColorStop(0.14, '#24304A'); g.addColorStop(0.86, '#24304A'); g.addColorStop(1, 'rgba(36,48,74,0)');
+      c.fillStyle = g; c.fillRect(x0, y, cw, 2);
+    };
+
+    nights.forEach((n, k) => {
+      const y = top + colH + rowH * k;
+      divider(y);
+      // best cell highlight
+      for (const [w, i] of [[n.evening, 2], [n.morning, 3]]) {
+        if (w.best) { c.fillStyle = 'rgba(99,214,168,.14)'; c.fillRect(cols[i] - 18, y + 2, colW, rowH - 2); }
+      }
+      c.fillStyle = '#E6ECF5'; c.font = font(600, 36); c.fillText(n.name, cols[0], y + 58);
+      if (n.best) { c.fillStyle = '#F2C46D'; c.fillText('★', cols[0] + c.measureText(n.name).width + 12, y + 56); }
+      c.fillStyle = '#9AA8BC'; c.font = font(500, 28); c.fillText(n.date, cols[0], y + 98);
+      // moon
+      const ms = 1.3, mx = cols[1], my = y + rowH / 2 - 20 * ms;
+      c.save(); c.translate(mx, my); c.scale(ms, ms);
+      c.fillStyle = '#2A3550'; c.beginPath(); c.arc(20, 20, 18, 0, Math.PI * 2); c.fill();
+      const d = moonLitPath(n.moon.phase, n.moon.fraction);
+      c.fillStyle = '#F1E4BE';
+      if (d === 'full') { c.beginPath(); c.arc(20, 20, 18, 0, Math.PI * 2); c.fill(); } else if (d) c.fill(new Path2D(d));
+      c.restore();
+      c.fillStyle = '#9AA8BC'; c.font = font(500, 28); c.fillText(`${n.moon.pct}%`, mx + 40 * ms + 12, y + rowH / 2 + 10);
+      // windows
+      for (const [w, i] of [[n.evening, 2], [n.morning, 3]]) {
+        const word = w.none ? '—' : w.verdict.text.split(' · ')[0];
+        c.fillStyle = SHARE_COLORS[w.verdict.cls] || '#9AA8BC'; c.font = font(600, 36); c.fillText(word, cols[i], y + 58);
+        if (!w.none && !w.past && !w.noData) { c.fillStyle = '#9AA8BC'; c.font = font(500, 28); c.fillText(`${w.cloud}% cloud`, cols[i], y + 98); }
+      }
+    });
+
+    c.fillStyle = '#6F7E95'; c.font = font(500, 26); c.textAlign = 'center';
+    c.fillText(`Simple Weather · ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, W / 2, H - 36);
+    return new Promise(ok => cv.toBlob(ok, 'image/png'));
+  }
+
+  async function prepareShare(place, m) {
+    const text = L.shareText(place.name, m.stars.outlook, m.tz);
+    const blob = await drawOutlookImage(place, m);
+    const file = blob && new File([blob], 'star-outlook.png', { type: 'image/png' });
+    return { text, file };
+  }
+
+  function shareOutlook() {
+    const go = d => {
+      if (!d) return;
+      const withFile = d.file ? { text: d.text, files: [d.file] } : null;
+      let p;
+      if (withFile && navigator.canShare && navigator.canShare(withFile)) p = navigator.share(withFile);
+      else if (navigator.share) p = navigator.share({ text: d.text });
+      else {
+        // No share sheet (desktop): save the image and copy the message.
+        if (d.file) { const a = document.createElement('a'); a.href = URL.createObjectURL(d.file); a.download = d.file.name; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 5000); }
+        if (navigator.clipboard) navigator.clipboard.writeText(d.text).catch(() => {});
+        return;
+      }
+      p.catch(e => { if (e && e.name !== 'AbortError') console.error(e); });
+    };
+    if (shareReady) go(shareReady); else if (sharePrep) sharePrep.then(go);
+  }
+  document.getElementById('outlook-share').addEventListener('click', shareOutlook);
   outlookSheet.addEventListener('click', e => { if (e.target === outlookSheet) closeOutlook(); });
 
   /* ---------- moon phase explainer ---------- */

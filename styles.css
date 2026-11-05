@@ -59,6 +59,7 @@
 }
 
 * { box-sizing: border-box; }
+:root { --divider-fade: linear-gradient(90deg, transparent, var(--divider) 14%, var(--divider) 86%, transparent); }
 
 html, body {
   margin: 0;
@@ -241,7 +242,7 @@ a { color: var(--rain); }
 .hero-verdict { font-size: 22px; font-weight: 700; line-height: 1.1; }
 .stars.hero .card-head { align-items: center; }
 .hero-sum { font-size: 15px; color: var(--soft); }
-.stars.hero .moon { padding-top: 12px; border-top: 1px solid var(--divider); }
+.stars.hero .moon { padding-top: 13px; background: var(--divider-fade) top / 100% 1px no-repeat; }
 
 /* next 6 days */
 .glass { background: color-mix(in srgb, var(--card) 72%, transparent); }
@@ -272,8 +273,9 @@ a { color: var(--rain); }
 @keyframes up { from { transform: translateY(40px); opacity: 0; } }
 .sheet.searching { margin: max(8px, env(safe-area-inset-top)) auto auto; border-radius: 20px; padding-bottom: 12px; }
 .sheet.searching #places-list, .sheet.searching .units-row { display: none; }
+.sheet-actions { flex: none; display: flex; gap: 10px; }
 .sheet-close {
-  flex: none; width: 100%; min-height: 50px; border: 0; border-radius: 12px;
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; border: 0; border-radius: 12px;
   background: var(--card); color: var(--text); font-size: 16px; font-weight: 600;
 }
 .sheet-close:active { background: color-mix(in srgb, var(--card) 70%, var(--muted)); }
@@ -306,7 +308,9 @@ a { color: var(--rain); }
 .sheet-sub { font-size: 15px; color: var(--muted); }
 .outlook { overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; background: var(--card); border-radius: 12px; }
 .outlook-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-.outlook-table th, .outlook-table td { padding: 8px 6px; text-align: left; vertical-align: middle; border-top: 1px solid var(--divider); font-weight: normal; }
+.outlook-table th, .outlook-table td { padding: 8px 6px; text-align: left; vertical-align: middle; font-weight: normal; }
+/* Soft dividers that fade out at both ends; a full-width row so the fade spans the whole table. */
+.outlook-table tr.sep td { height: 1px; padding: 0 !important; background: var(--divider-fade); }
 .outlook-table thead th {
   position: sticky; top: 0; z-index: 1; background: var(--card); border-top: 0;
   font-size: 12px; font-weight: 600; letter-spacing: .4px; text-transform: uppercase; color: var(--muted);

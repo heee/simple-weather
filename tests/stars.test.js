@@ -213,4 +213,21 @@ check('verdict table', () => {
   assert.strictEqual(L.cloudClass(51), 'Cloudy');
 });
 
+// ---- share text ----
+check('share text: next Great window, else best, else none', () => {
+  const w = (kind, score, text, extra = {}) => ({ kind, start: at('2026-10-24T10:00:00Z'), when: kind === 'tonight' ? '7:05 pm – 1 am' : '4:30 – 6:10 am', cloud: 5, verdict: { score, text }, ...extra });
+  const night = (name, ev, mo) => ({ name, evening: ev, morning: mo });
+  const o = [night('Tonight', w('tonight', 2, 'Fair · bright moon'), w('predawn', 3, 'Good')),
+    night('Fri', w('tonight', 4, 'Great'), w('predawn', 4, 'Great'))];
+  assert.strictEqual(L.shareText('Houston', o, TZ), 'Stargazing in Houston 🌌\nNext great window: Fri evening, 7:05 pm – 1 am (5% cloud).');
+  o[1].evening = w('tonight', 0, 'Poor');
+  assert.strictEqual(L.shareText('Houston', o, TZ), 'Stargazing in Houston 🌌\nNext great window: early Sat morning, 4:30 – 6:10 am (5% cloud).');
+  o[1].morning = w('predawn', 0, 'Poor'); o[0].morning.best = true;
+  assert.strictEqual(L.shareText('Houston', o, TZ), 'Stargazing in Houston 🌌\nNo great windows in the next 2 nights. Best bet: early tomorrow morning, 4:30 – 6:10 am (Good, 5% cloud).');
+  o[0].evening = w('tonight', 0, 'Poor'); o[0].morning = w('predawn', -1, 'Over', { past: true });
+  assert.strictEqual(L.shareText('Houston', o, TZ), 'Stargazing in Houston 🌌\nNo good windows in the next 2 nights.');
+  const now = [night('Now', w('tonight', -1, 'Over', { past: true }), w('predawn', 4, 'Great'))];
+  assert.ok(L.shareText('Houston', now, TZ).includes('this morning'));
+});
+
 console.log(`\n${passed} checks passed`);
