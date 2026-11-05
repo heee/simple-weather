@@ -47,4 +47,16 @@ check('state names, accents and case are forgiving', () => {
   assert.ok(!L.placeMatches(londons[0], ['france']));
 });
 
+check('ranking: exact name, then whole-word prefix, then by population', () => {
+  const list = [
+    { name: 'Londonderry', population: 83000 },
+    { name: 'London Colney', population: 8000 },
+    { name: 'London', admin1: 'Kentucky', population: 8000 },
+    { name: 'Londonthorpe' },
+    { name: 'London', admin1: 'England', population: 8961989 }
+  ];
+  assert.deepStrictEqual(L.rankPlaces(list, 'london').map(r => r.name + (r.admin1 ? ' ' + r.admin1 : '')),
+    ['London England', 'London Kentucky', 'London Colney', 'Londonderry', 'Londonthorpe']);
+});
+
 console.log(`\n${passed} checks passed`);

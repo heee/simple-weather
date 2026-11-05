@@ -571,6 +571,7 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
     renderPlaces();
     search.value = '';
     results.innerHTML = '';
+    sheet.classList.remove('searching');
     if (typeof sheet.showModal === 'function') sheet.showModal(); else sheet.setAttribute('open', '');
   }
   function closePlaces() { if (sheet.open) sheet.close ? sheet.close() : sheet.removeAttribute('open'); }
@@ -598,8 +599,11 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
   });
 
   let searchTimer = 0, searchSeq = 0;
+  // While typing, the sheet shows only the search box and results, top-aligned above the keyboard.
+  const setSearching = () => sheet.classList.toggle('searching', search.value.trim().length > 0);
   search.addEventListener('input', () => {
     clearTimeout(searchTimer);
+    setSearching();
     const q = search.value.trim();
     if (q.length < 2) { results.innerHTML = ''; return; }
     searchTimer = setTimeout(() => runSearch(q), 300);
@@ -615,9 +619,9 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
       found = [];
       for (const { name, quals } of L.placeQueries(q)) {
         if (name.length < 2) continue;
-        const data = await getJSON('https://geocoding-api.open-meteo.com/v1/search?' + new URLSearchParams({ name, count: quals.length ? 50 : 8, language: 'en', format: 'json' }));
+        const data = await getJSON('https://geocoding-api.open-meteo.com/v1/search?' + new URLSearchParams({ name, count: quals.length ? 50 : 20, language: 'en', format: 'json' }));
         if (seq !== searchSeq) return;
-        found = (data.results || []).filter(r => L.placeMatches(r, quals)).slice(0, 8);
+        found = L.rankPlaces((data.results || []).filter(r => L.placeMatches(r, quals)), name).slice(0, 5);
         if (found.length) break;
       }
       results.innerHTML = found.length ? found.map((r, i) => `<li><button type="button" class="pick" data-pick="${i}">

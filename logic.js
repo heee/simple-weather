@@ -396,5 +396,15 @@
     });
   }
 
-  root.SWLogic = { placeQueries, placeMatches, build, parts, time, span, group, label, iconName, compass, phaseName, verdict, cloudClass, hazeClass, moonEvents };
+  // Best first: exact name, then names that start with the search as a whole word ("London Colney"
+  // before "Londonderry"), then bigger places. The geocoder also returns loose prefix matches.
+  function rankPlaces(list, name) {
+    const n = fold(name);
+    const tier = r => { const f = fold(r.name); return f === n ? 0 : f.startsWith(n + ' ') ? 1 : 2; };
+    return list.map((r, i) => ({ r, i, t: tier(r), pop: r.population || 0 }))
+      .sort((a, b) => a.t - b.t || b.pop - a.pop || a.i - b.i)
+      .map(x => x.r);
+  }
+
+  root.SWLogic = { placeQueries, placeMatches, rankPlaces, build, parts, time, span, group, label, iconName, compass, phaseName, verdict, cloudClass, hazeClass, moonEvents };
 })(typeof window !== 'undefined' ? window : globalThis);
