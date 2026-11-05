@@ -184,12 +184,20 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
 </section>`;
   }
 
+  // Signal-style meter: 4 translucent bars (Great 4, Good 3, Fair 2, Poor none lit) beside the word.
+  function verdictMeter(v) {
+    const word = v.text.split(' · ')[0];
+    const lit = Math.max(0, Math.min(4, v.score));
+    const bars = [0, 1, 2, 3].map(i => `<i class="${i < lit ? 'on' : ''}"></i>`).join('');
+    return `<span class="hero-verdict v-${v.cls}" role="img" aria-label="${esc(word)}, ${lit} of 4"><span class="meter" aria-hidden="true">${bars}</span><span aria-hidden="true">${esc(word)}</span></span>`;
+  }
+
   function starsHeroHTML(m) {
     const h = m.stars.hero;
     return `<section class="card stars hero" aria-label="Stargazing">
   <div class="hero-main">
     <div class="hero-text"><span class="label">${h.title}</span><span class="hero-sum">${esc(h.summary)}</span></div>
-    <span class="hero-verdict v-${h.win.verdict.cls}">${esc(h.win.verdict.text.split(' · ')[0])}</span>
+    ${verdictMeter(h.win.verdict)}
   </div>
   ${moonHTML(m.stars.moon, 40)}
 </section>`;

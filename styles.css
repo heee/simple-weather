@@ -237,7 +237,11 @@ a { color: var(--rain); }
 .stars.hero { background: var(--hero); border: 1px solid var(--hero-border); border-radius: 12px; padding: 18px 16px; gap: 14px; }
 .hero-main { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .hero-text { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.hero-verdict { font-size: 22px; font-weight: 700; line-height: 1.1; }
+.hero-verdict { flex: none; display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 700; line-height: 1; }
+.meter { display: flex; align-items: flex-end; gap: 3px; height: 20px; }
+.meter i { display: block; width: 5px; border-radius: 2px; background: color-mix(in srgb, var(--muted) 22%, transparent); }
+.meter i:nth-child(1) { height: 8px; } .meter i:nth-child(2) { height: 12px; } .meter i:nth-child(3) { height: 16px; } .meter i:nth-child(4) { height: 20px; }
+.meter i.on { background: color-mix(in srgb, currentColor 70%, transparent); }
 .hero-sum { font-size: 15px; color: var(--soft); }
 .stars.hero .moon { padding-top: 13px; background: var(--divider-fade) top / 100% 1px no-repeat; }
 
