@@ -119,7 +119,7 @@
     const dots = n > 1 ? `<div class="dots" role="img" aria-label="Place ${idx + 1} of ${n}">${state.places.map((_, i) => `<span class="${i === idx ? 'on' : ''}"></span>`).join('')}</div>` : '';
     return `<div class="header">${dots}
   <button type="button" class="place-btn" data-act="places" aria-label="${esc(title)}${place.region ? ', ' + esc(place.region) : ''}${local ? ', local time ' + local : ''}. Manage places">
-    <span class="place-name"><span class="city">${esc(title)}</span>${icon('chevron', 14, 2)}</span>${local ? `<span class="place-time">${local} local time</span>` : ''}
+    <span class="place-name"><span class="city">${esc(title)}</span>${icon('chevron', 14, 2)}</span>${local ? `<span class="place-time">${local}</span>` : ''}
   </button>
   <div class="updated">${updated}
     <button type="button" class="icon-btn${loading ? ' spinning' : ''}" data-act="refresh" aria-label="Refresh">${icon('refresh', 20, 1.8)}</button>
