@@ -111,7 +111,10 @@
       const tag = age > STALE_AFTER ? (navigator.onLine === false ? ' · offline' : ' · stale') : '';
       if (tag) updated = `<span class="stale">Updated ${L.time(rec.fetchedAt, undefined, true)}${tag}</span>`;
     } else if (loading) updated = '<span>Loading…</span>';
-    return `<div class="header">
+    // Page dots sit in the header row, centred between the place name and refresh (2+ places only).
+    const n = state.places.length;
+    const dots = n > 1 ? `<div class="dots" role="img" aria-label="Place ${idx + 1} of ${n}">${state.places.map((_, i) => `<span class="${i === idx ? 'on' : ''}"></span>`).join('')}</div>` : '';
+    return `<div class="header">${dots}
   <button type="button" class="place-btn" data-act="places" aria-label="${esc(title)}, ${esc(sub)}. Manage places">
     <span class="place-name">${esc(title)}${icon('chevron', 14, 2)}</span>
     <span class="place-sub">${esc(sub)}</span>
@@ -234,18 +237,8 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
 
   const pager = document.getElementById('pager');
 
-  // One floating set of page dots at the top centre, shown only with 2+ places.
-  const dotsEl = document.getElementById('dots');
-  function renderDots() {
-    const n = state.places.length;
-    dotsEl.hidden = n < 2;
-    dotsEl.setAttribute('aria-label', `Place ${state.active + 1} of ${n}`);
-    dotsEl.innerHTML = state.places.map((_, i) => `<span class="${i === state.active ? 'on' : ''}"></span>`).join('');
-  }
-
   function buildPages() {
     if (state.active >= state.places.length) state.active = 0;
-    renderDots();
     pager.innerHTML = state.places.map(p => `<div class="page" data-id="${esc(p.id)}"></div>`).join('');
     pager.querySelectorAll('.page').forEach(page => page.addEventListener('scroll', onPageScroll, { passive: true }));
     renderAll();
@@ -268,7 +261,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
 
   pager.addEventListener('scroll', () => {
     const i = Math.round(pager.scrollLeft / Math.max(1, pager.clientWidth));
-    if (i !== state.active && i >= 0 && i < state.places.length) { state.active = i; renderDots(); }
+    if (i !== state.active && i >= 0 && i < state.places.length) state.active = i;
   }, { passive: true });
 
   /* ---------- data ---------- */
