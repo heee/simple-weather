@@ -270,13 +270,8 @@ a { color: var(--rain); }
 @keyframes up { from { transform: translateY(40px); opacity: 0; } }
 .sheet.searching { margin: max(8px, env(safe-area-inset-top)) auto auto; border-radius: 20px; padding-bottom: 12px; }
 .sheet.searching #places-list, .sheet.searching .units-row { display: none; }
-.sheet-actions { flex: none; display: flex; gap: 10px; }
-.sheet-close {
-  flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; border: 0; border-radius: 12px;
-  background: var(--card); color: var(--text); font-size: 16px; font-weight: 600;
-}
-.sheet-close:active { background: color-mix(in srgb, var(--card) 70%, var(--muted)); }
-.sheet-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.sheet-tools { display: flex; gap: 2px; margin-right: -10px; }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .sheet h2 { margin: 0; font-size: 20px; font-weight: 600; }
 .place-list { list-style: none; margin: 0; padding: 0; background: var(--card); border-radius: 12px; overflow: auto; }
 .place-list:empty { display: none; }
@@ -302,7 +297,6 @@ a { color: var(--rain); }
 
 /* ---- star outlook sheet ---- */
 
-.sheet-sub { font-size: 15px; color: var(--muted); }
 .outlook { overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; background: var(--card); border-radius: 12px; }
 .outlook-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
 .outlook-table th, .outlook-table td { padding: 8px 6px; text-align: left; vertical-align: middle; font-weight: normal; }

@@ -428,7 +428,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     let m = null;
     try { m = rec && L.build(place, rec, Date.now()); } catch (e) { console.error(e); }
     if (!m) return;
-    document.getElementById('outlook-sub').textContent = place.name;
+    document.getElementById('outlook-share').setAttribute('aria-label', `Share the star outlook for ${place.name}`);
     outlookList.innerHTML = outlookHTML(m.stars.outlook);
     outlookList.scrollTop = 0;
     // Prepare the share image now: iOS only opens the share sheet straight after a tap.

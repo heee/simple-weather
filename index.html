@@ -46,16 +46,16 @@
 <dialog id="outlook" class="sheet" aria-labelledby="outlook-title">
   <div class="sheet-head">
     <h2 id="outlook-title">Star outlook</h2>
-    <span id="outlook-sub" class="sheet-sub"></span>
+    <div class="sheet-tools">
+      <button type="button" class="icon-btn" id="outlook-share" aria-label="Share">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>
+      </button>
+      <button type="button" class="icon-btn" id="outlook-close" aria-label="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
   </div>
   <div id="outlook-list" class="outlook"></div>
-  <div class="sheet-actions">
-    <button type="button" class="sheet-close" id="outlook-share">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1"/></svg>
-      Share
-    </button>
-    <button type="button" class="sheet-close" id="outlook-close">Close</button>
-  </div>
 </dialog>
 
 <dialog id="moon-info" class="pop" aria-labelledby="moon-info-title"></dialog>
