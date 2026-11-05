@@ -9,8 +9,8 @@
 :root {
   --bg: #EEF3F7;
   --card: #FFFFFF;
-  --hero: #FFFFFF;
-  --hero-border: transparent;
+  --hero: rgba(255, 255, 255, .55);
+  --hero-border: rgba(255, 255, 255, .6);
   --text: #10202E;
   --muted: #556676;
   --soft: #3C4E60;
@@ -37,8 +37,8 @@
   :root {
     --bg: #0B1220;
     --card: #151E30;
-    --hero: rgba(21, 30, 48, .78);
-    --hero-border: #24304A;
+    --hero: rgba(21, 30, 48, .38);
+    --hero-border: rgba(140, 160, 200, .22);
     --text: #E6ECF5;
     --muted: #9AA8BC;
     --soft: #C9D3E0;
