@@ -129,7 +129,7 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
     ].filter(Boolean).join(' · ');
     return `<section class="current" aria-label="Current conditions">
   <div class="current-top">
-    <div class="temp">${deg(c.temp)}</div>
+    <button type="button" class="temp" data-act="units-toggle" aria-label="${deg(c.temp)} ${state.units === 'C' ? 'Celsius' : 'Fahrenheit'}. Switch to ${state.units === 'C' ? 'Fahrenheit' : 'Celsius'}">${deg(c.temp)}</button>
     <div class="cond">
       <div class="cond-row">${icon(c.icon, 26, 1.6, null)}<span>${esc(c.label)}</span></div>
       <div class="hl">H ${deg(t.hi)}&nbsp;&nbsp;<span class="lo">L ${deg(t.lo)}</span></div>
@@ -329,6 +329,7 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
     const act = btn.dataset.act;
     if (act === 'refresh' && place) refresh(place);
     else if (act === 'places') openPlaces();
+    else if (act === 'units-toggle') setUnits(state.units === 'C' ? 'F' : 'C');
     else if (act === 'week') { state.weekOpen = !state.weekOpen; renderAll(); }
     else if (act === 'outlook' && place) openOutlook(place);
     else if (act === 'moon' && place) openMoonInfo(place, btn);
@@ -542,16 +543,18 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
   const regionOf = r => r.country_code === 'US' ? (US_STATES[r.admin1] || r.admin1 || 'US') : (r.country || r.admin1 || '');
 
   const unitsSeg = document.getElementById('units');
+  function setUnits(u) {
+    state.units = u;
+    store.set('sw.units', u);
+    renderUnits();
+    renderAll();
+  }
   function renderUnits() {
     unitsSeg.querySelectorAll('[data-unit]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.unit === state.units)));
   }
   unitsSeg.addEventListener('click', e => {
     const b = e.target.closest('[data-unit]');
-    if (!b) return;
-    state.units = b.dataset.unit;
-    store.set('sw.units', state.units);
-    renderUnits();
-    renderAll();
+    if (b) setUnits(b.dataset.unit);
   });
 
   function renderPlaces() {
