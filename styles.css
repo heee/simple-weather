@@ -245,6 +245,13 @@ a { color: var(--rain); }
 .meter i.on { background: color-mix(in srgb, currentColor 50%, transparent); }
 /* smaller meter for the daytime card and the outlook table */
 .verdict.sm { gap: 6px; }
+.cell-line { display: inline-flex; align-items: center; gap: 6px; }
+.marks { display: inline-flex; gap: 3px; color: var(--muted); }
+.outlook-legend {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin: 0; padding: 10px 14px 12px;
+  font-size: 12px; color: var(--muted); background: var(--divider-fade) top / 100% 1px no-repeat;
+}
+.outlook-legend span { display: inline-flex; align-items: center; gap: 4px; }
 .moon .verdict { margin-left: 8px; vertical-align: -1px; font-size: 15px; }
 .sm .meter { gap: 2px; height: 14px; }
 .sm .meter i { width: 4px; border-radius: 1.5px; }

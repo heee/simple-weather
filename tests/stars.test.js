@@ -104,7 +104,7 @@ check('5:42 am: hero is pre-dawn, "Stars now", moon has set, dark until nautical
   assert.strictEqual(h.title, 'Stars now');
   assert.strictEqual(h.win.kind, 'predawn');
   assert.strictEqual(h.win.verdict.text, 'Great');
-  assert.strictEqual(h.summary, '6% cloud · moon has set');
+  assert.strictEqual(h.summary, 'moon has set');
   assert.ok(/^Dark sky until 6:[34][05] am$/.test(h.dark), h.dark);
   assert.strictEqual(h.other.kind, 'tonight');
   assert.ok(h.other.start > at('2026-10-22T10:42:00Z'), 'next tonight, not the one that passed');
@@ -236,15 +236,24 @@ check('share text: next Great window, else best, else none', () => {
   const night = (name, ev, mo) => ({ name, evening: ev, morning: mo });
   const o = [night('Tonight', w('tonight', 2, 'Fair · bright moon'), w('predawn', 3, 'Good')),
     night('Fri', w('tonight', 4, 'Great'), w('predawn', 4, 'Great'))];
-  assert.strictEqual(L.shareText('Houston', o, TZ), 'Stargazing in Houston 🌌\nNext great window: Fri evening, 7:05 pm – 1 am (5% cloud).');
+  assert.strictEqual(L.shareText('Houston', o, TZ), 'Stargazing in Houston 🌌\nNext great window: Fri evening, 7:05 pm – 1 am (95% clear sky).');
   o[1].evening = w('tonight', 0, 'Poor');
-  assert.strictEqual(L.shareText('Houston', o, TZ), 'Stargazing in Houston 🌌\nNext great window: early Sat morning, 4:30 – 6:10 am (5% cloud).');
+  assert.strictEqual(L.shareText('Houston', o, TZ), 'Stargazing in Houston 🌌\nNext great window: early Sat morning, 4:30 – 6:10 am (95% clear sky).');
   o[1].morning = w('predawn', 0, 'Poor'); o[0].morning.best = true;
-  assert.strictEqual(L.shareText('Houston', o, TZ), 'Stargazing in Houston 🌌\nNo great windows in the next 2 nights. Best bet: early tomorrow morning, 4:30 – 6:10 am (Good, 5% cloud).');
+  assert.strictEqual(L.shareText('Houston', o, TZ), 'Stargazing in Houston 🌌\nNo great windows in the next 2 nights. Best bet: early tomorrow morning, 4:30 – 6:10 am (Good, 95% clear sky).');
   o[0].evening = w('tonight', 0, 'Poor'); o[0].morning = w('predawn', -1, 'Over', { past: true });
   assert.strictEqual(L.shareText('Houston', o, TZ), 'Stargazing in Houston 🌌\nNo good windows in the next 2 nights.');
   const now = [night('Now', w('tonight', -1, 'Over', { past: true }), w('predawn', 4, 'Great'))];
   assert.ok(L.shareText('Houston', now, TZ).includes('this morning'));
+});
+
+check('slot marks: bright moon, haze/fog, likely rain; none for unrated windows', () => {
+  const base = { verdict: { score: 2 }, bright: false, haze: null, maxPop: 0 };
+  assert.deepStrictEqual(L.slotMarks({ ...base, bright: true }), ['moon']);
+  assert.deepStrictEqual(L.slotMarks({ ...base, haze: 'fog', maxPop: 60 }), ['haze', 'rain']);
+  assert.deepStrictEqual(L.slotMarks({ ...base, bright: true, verdict: { score: 0 } }), [], 'a bright moon on a Poor night is not the reason');
+  assert.deepStrictEqual(L.slotMarks({ ...base, past: true, bright: true }), []);
+  assert.deepStrictEqual(L.slotMarks({ none: true }), []);
 });
 
 console.log(`\n${passed} checks passed`);

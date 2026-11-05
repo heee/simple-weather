@@ -178,7 +178,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     return `<section class="card glass stars compact" aria-label="Stargazing">
   <div class="moon">
     <button type="button" class="moon-btn" data-act="moon" aria-haspopup="dialog" aria-label="${esc(moon.name)} moon, ${moon.pct}% lit">${moonIcon(moon.phase, moon.fraction, 34, moon.name + ' moon')}</button>
-    <div><span class="n">Stars ${esc(name)}</span>${verdictMeter(w.verdict, 'sm')}<span class="s">${esc([w.when, ...w.verdict.text.split(' · ').slice(1)].join(' · '))}</span></div>
+    <div><span class="n">Stars ${esc(name)}</span>${verdictMeter(w.verdict, 'sm', clearOf(w))}<span class="s">${esc([w.when, ...L.slotMarks(w).map(k => MARKS[k].label)].join(' · '))}</span></div>
     <button type="button" class="icon-btn" data-act="outlook" aria-label="Star outlook for the next 7 nights">${icon('outlook', 22, 1.6)}</button>
   </div>
 </section>`;
@@ -187,20 +187,32 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
   // Signal-style meter: 4 translucent bars (Great 4, Good 3, Fair 2, Poor none lit) beside the word.
   // Used on the night card, the daytime stars card and the outlook. States without a rating
   // ("Over", "No data", no window) show just the word.
-  function verdictMeter(v, cls = '') {
+  // With `clear` (0–100) the number replaces the word: e.g. bars + "96%" in the verdict colour.
+  function verdictMeter(v, cls = '', clear = null) {
     const word = v.text.split(' · ')[0];
     if (v.score < 0) return `<span class="verdict ${cls} v-${v.cls}">${esc(word)}</span>`;
     const lit = Math.max(0, Math.min(4, v.score));
     const bars = [0, 1, 2, 3].map(i => `<i class="${i < lit ? 'on' : ''}"></i>`).join('');
-    return `<span class="verdict ${cls} v-${v.cls}" role="img" aria-label="${esc(word)}, ${lit} of 4"><span class="meter" aria-hidden="true">${bars}</span><span aria-hidden="true">${esc(word)}</span></span>`;
+    const shown = clear == null ? word : `${clear}%`;
+    const label = `${word}, ${lit} of 4${clear == null ? '' : `, ${clear}% clear sky`}`;
+    return `<span class="verdict ${cls} v-${v.cls}" role="img" aria-label="${esc(label)}"><span class="meter" aria-hidden="true">${bars}</span><span aria-hidden="true">${esc(shown)}</span></span>`;
   }
+  const clearOf = w => (w && !w.none && !w.noData && w.cloud != null ? 100 - w.cloud : null);
+
+  // Small marks for what besides cloud lowers a rating.
+  const MARKS = {
+    moon: { path: PATHS.moon, label: 'bright moon' },
+    haze: { path: '<path d="M4 8h16M6 12h12M4 16h16"/>', label: 'haze or fog' },
+    rain: { path: PATHS.drop, label: 'rain likely' }
+  };
+  const markIcon = k => `<svg class="mark" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${MARKS[k].path}</svg>`;
 
   function starsHeroHTML(m) {
     const h = m.stars.hero;
     return `<section class="card stars hero" aria-label="Stargazing">
   <div class="hero-main">
     <div class="hero-text"><span class="label">${h.title}</span><span class="hero-sum">${esc(h.summary)}</span></div>
-    ${verdictMeter(h.win.verdict, 'hero-verdict')}
+    ${verdictMeter(h.win.verdict, 'hero-verdict', clearOf(h.win))}
   </div>
   ${moonHTML(m.stars.moon, 40)}
 </section>`;
@@ -354,14 +366,14 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
   const outlookSheet = document.getElementById('outlook');
   const outlookList = document.getElementById('outlook-list');
 
-  // One table cell: short verdict on top, cloud % below, plus haze/fog and a bright moon when it costs a clear sky.
+  // One table cell: meter + clear-sky % in the verdict colour, plus marks for moon, haze or rain.
   function slotCell(w) {
     const full = `${w.when}: ${w.verdict.text}${w.detail ? ', ' + w.detail : ''}`;
-    let sub = '';
-    if (!w.none && !w.past && !w.noData) sub = [`${w.cloud}%`, w.bright && w.verdict.score > 0 && 'moon', w.haze].filter(Boolean).join(' · ');
     const v = w.none ? { text: '—', cls: 'poor', score: -1 } : w.verdict;
+    const marks = L.slotMarks(w);
+    const markHTML = marks.length ? `<span class="marks" role="img" aria-label="${esc(marks.map(k => MARKS[k].label).join(', '))}">${marks.map(markIcon).join('')}</span>` : '';
     return `<td class="cell${w.best ? ' best' : ''}" title="${esc(full)}">
-      ${verdictMeter(v, 'n sm')}${sub ? `<span class="s">${esc(sub)}</span>` : ''}</td>`;
+      <span class="cell-line">${verdictMeter(v, 'n sm', w.past ? null : clearOf(w))}${markHTML}</span></td>`;
   }
 
   // "Clearest", moon and haze notes for one night's hours.
@@ -431,7 +443,8 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
   <thead><tr><th scope="col">Night</th><th scope="col">Moon</th>
     <th scope="col">Evening<span class="s">dark → 1 am</span></th><th scope="col">Morning<span class="s">4:30 → dawn</span></th></tr></thead>
   <tbody>${rows}</tbody>
-</table>`;
+</table>
+<p class="outlook-legend">% = clear sky<span>${markIcon('moon')} bright moon</span><span>${markIcon('haze')} haze</span><span>${markIcon('rain')} rain</span></p>`;
   }
 
   function openOutlook(place) {
@@ -475,9 +488,18 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     return new Promise((ok, fail) => { const i = new Image(); i.onload = () => ok(i); i.onerror = fail; i.src = src; });
   }
 
+  // A mark icon on the canvas, from the same SVG path as in the app.
+  function drawMark(c, k, x, y, size) {
+    c.save(); c.translate(x, y); c.scale(size / 24, size / 24);
+    c.strokeStyle = '#9AA8BC'; c.lineWidth = 2.2; c.lineCap = 'round'; c.lineJoin = 'round';
+    const d = MARKS[k].path.match(/d="([^"]+)"/g).map(s => s.slice(3, -1));
+    d.forEach(p => c.stroke(new Path2D(p)));
+    c.restore();
+  }
+
   async function drawOutlookImage(place, m) {
     const nights = m.stars.outlook;
-    const W = 1080, pad = 56, headH = 150, colH = 104, rowH = 128, footH = 96;
+    const W = 1080, pad = 56, headH = 150, colH = 104, rowH = 128, footH = 150;
     const H = pad + headH + colH + rowH * nights.length + footH;
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const c = cv.getContext('2d');
@@ -544,7 +566,9 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
       c.fillStyle = '#9AA8BC'; c.font = font(500, 28); c.fillText(`${n.moon.pct}%`, mx + 40 * ms + 12, y + rowH / 2 + 10);
       // windows
       for (const [w, i] of [[n.evening, 2], [n.morning, 3]]) {
-        const word = w.none ? '—' : w.verdict.text.split(' · ')[0];
+        const clear = w.past ? null : clearOf(w);
+        const word = w.none ? '—' : clear != null && w.verdict.score >= 0 ? `${clear}%` : w.verdict.text.split(' · ')[0];
+        const base = y + 76;
         const col = SHARE_COLORS[w.verdict.cls] || '#9AA8BC';
         let tx = cols[i];
         if (!w.none && w.verdict.score >= 0) {
@@ -554,19 +578,28 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
             c.globalAlpha = b < lit ? 0.5 : 1;
             c.fillStyle = b < lit ? col : 'rgba(154,168,188,.14)';
             c.beginPath();
-            if (c.roundRect) c.roundRect(tx + b * 13, y + 58 - h, 8, h, 3); else c.rect(tx + b * 13, y + 58 - h, 8, h);
+            if (c.roundRect) c.roundRect(tx + b * 13, base - h, 8, h, 3); else c.rect(tx + b * 13, base - h, 8, h);
             c.fill();
           });
           c.globalAlpha = 1;
           tx += 4 * 13 + 10;
         }
-        c.fillStyle = col; c.font = font(600, 36); c.fillText(word, tx, y + 58);
-        if (!w.none && !w.past && !w.noData) { c.fillStyle = '#9AA8BC'; c.font = font(500, 28); c.fillText(`${w.cloud}% cloud`, cols[i], y + 98); }
+        c.fillStyle = col; c.font = font(600, 36); c.fillText(word, tx, base);
+        let mx2 = tx + c.measureText(word).width + 12;
+        for (const k of L.slotMarks(w)) { drawMark(c, k, mx2, base - 26, 26); mx2 += 32; }
       }
     });
 
+    // legend + footer
+    c.fillStyle = '#9AA8BC'; c.font = font(500, 26); c.textAlign = 'left';
+    let lx = x0 + 40; const ly = top + colH + rowH * nights.length + 52;
+    c.fillText('% = clear sky', lx, ly); lx += c.measureText('% = clear sky').width + 34;
+    for (const k of ['moon', 'haze', 'rain']) {
+      drawMark(c, k, lx, ly - 22, 24); lx += 32;
+      c.fillStyle = '#9AA8BC'; c.fillText(MARKS[k].label, lx, ly); lx += c.measureText(MARKS[k].label).width + 30;
+    }
     c.fillStyle = '#6F7E95'; c.font = font(500, 26); c.textAlign = 'center';
-    c.fillText(`Simple Weather · ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, W / 2, H - 36);
+    c.fillText(`Simple Weather · ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`, W / 2, H - 30);
     return new Promise(ok => cv.toBlob(ok, 'image/png'));
   }
 

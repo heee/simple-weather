@@ -355,7 +355,9 @@
             : w.kind === 'tonight' ? 'Stars tonight' : `Stars from ${time(round5(w.start), tz)}`,
           win: w,
           other: w === tw ? pw : tw,
-          summary: w.noData ? 'Beyond the forecast' : `${w.cloud}% cloud · ${moonPhrase}`,
+          // The clear-sky % sits beside the meter, so the summary covers what else matters.
+          summary: w.noData ? 'Beyond the forecast'
+            : [moonPhrase, w.haze, w.maxPop >= 40 && `${w.maxPop}% chance of rain`].filter(Boolean).join(' · '),
           dark: isNaN(darkEnd) ? '' : dark
         };
       }
@@ -411,6 +413,12 @@
       .map(x => x.r);
   }
 
+  // What besides cloud is costing a rated window: a bright moon, haze or fog, likely rain.
+  function slotMarks(w) {
+    if (!w || w.none || w.past || w.noData) return [];
+    return [w.bright && w.verdict.score > 0 && 'moon', w.haze && 'haze', w.maxPop >= 40 && 'rain'].filter(Boolean);
+  }
+
   /* ---------- share text for the star outlook ---------- */
 
   // "tonight", "Sat evening", "early tomorrow morning", "early Sun morning", "this morning".
@@ -429,11 +437,11 @@
     }
     const head = `Stargazing in ${placeName} 🌌`;
     const great = slots.find(s => s.w.verdict.score >= 4);
-    if (great) return `${head}\nNext great window: ${windowLabel(great.n, great.w, tz)}, ${great.w.when} (${great.w.cloud}% cloud).`;
+    if (great) return `${head}\nNext great window: ${windowLabel(great.n, great.w, tz)}, ${great.w.when} (${100 - great.w.cloud}% clear sky).`;
     const best = slots.find(s => s.w.best) || slots[0];
-    if (best) return `${head}\nNo great windows in the next ${outlook.length} nights. Best bet: ${windowLabel(best.n, best.w, tz)}, ${best.w.when} (${best.w.verdict.text.split(' · ')[0]}, ${best.w.cloud}% cloud).`;
+    if (best) return `${head}\nNo great windows in the next ${outlook.length} nights. Best bet: ${windowLabel(best.n, best.w, tz)}, ${best.w.when} (${best.w.verdict.text.split(' · ')[0]}, ${100 - best.w.cloud}% clear sky).`;
     return `${head}\nNo good windows in the next ${outlook.length} nights.`;
   }
 
-  root.SWLogic = { shareText, placeQueries, placeMatches, rankPlaces, build, parts, time, span, group, label, iconName, compass, phaseName, verdict, cloudClass, hazeClass, moonEvents };
+  root.SWLogic = { slotMarks, shareText, placeQueries, placeMatches, rankPlaces, build, parts, time, span, group, label, iconName, compass, phaseName, verdict, cloudClass, hazeClass, moonEvents };
 })(typeof window !== 'undefined' ? window : globalThis);
