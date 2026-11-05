@@ -216,6 +216,11 @@
       hi: D.temperature_2m_max[ti], lo: D.temperature_2m_min[ti], snaps,
       // In the place's own time zone, e.g. "6:35 am"; empty where the sun doesn't rise or set (polar day/night).
       sunrise: isNaN(sunrise) ? '' : time(sunrise, tz, true), sunset: isNaN(sunset) ? '' : time(sunset, tz, true),
+      // For the curve on the back of the card: today's hourly temperatures and fractional local hours.
+      curve: Array.from({ length: 24 }, (_, h) => { const i = hourAt.get(`${today}T${h}`); return i === undefined ? null : { h, temp: H.temperature_2m[i] }; }).filter(Boolean),
+      sunriseH: isNaN(sunrise) ? null : (p => p.h + p.m / 60)(parts(sunrise, tz)),
+      sunsetH: isNaN(sunset) ? null : (p => p.h + p.m / 60)(parts(sunset, tz)),
+      nowH: nowP.h + nowP.m / 60,
       anyRain: snaps.some(s => !s.missing && s.pop >= 20)
     };
 

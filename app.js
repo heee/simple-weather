@@ -25,7 +25,8 @@
     wx: {},
     loading: new Set(),
     failed: new Set(),
-    active: 0
+    active: 0,
+    todayFlipped: false
   };
   if (!Array.isArray(state.places) || !state.places.length) state.places = DEFAULT_PLACES.slice();
   for (const p of state.places) state.wx[p.id] = store.get(wxKey(p.id), null);
@@ -154,12 +155,53 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     <span class="v">${deg(s.temp)}</span>
     ${t.anyRain ? `<span class="r">${s.pop >= 20 ? s.pop + '% rain' : ''}</span>` : ''}
   </div>`).join('');
-    const sun = [t.sunrise && `<span class="sun-t" aria-label="Sunrise ${t.sunrise}">${icon('sunrise', 16, 1.7)}${t.sunrise}</span>`,
-      t.sunset && `<span class="sun-t" aria-label="Sunset ${t.sunset}">${icon('sunset', 16, 1.7)}${t.sunset}</span>`].filter(Boolean).join('');
-    return `<section class="card glass" aria-label="Today">
-  <div class="card-head today-head"><span class="label">Today</span>${sun ? `<span class="sun-times">${sun}</span>` : ''}</div>
-  <div class="snaps">${snaps}</div>
+    const flipped = state.todayFlipped;
+    return `<section class="card-flip${flipped ? ' flipped' : ''}" aria-label="Today">
+  <div class="flip-inner" data-act="flip" role="button" tabindex="0" aria-pressed="${flipped}" aria-label="Today. Tap to ${flipped ? 'show the forecast' : 'show the temperature curve and sunrise and sunset'}">
+    <div class="face front card glass" aria-hidden="${flipped}"><span class="label">Today</span><div class="snaps">${snaps}</div></div>
+    <div class="face back card glass" aria-hidden="${!flipped}"><span class="label">Today</span>${dayCurveSVG(t)}</div>
+  </div>
 </section>`;
+  }
+
+  // The day's temperature as a smooth line, night hours shaded, sunrise and sunset marked with their times.
+  function dayCurveSVG(t) {
+    const pts = t.curve;
+    if (pts.length < 2) return '<p class="curve-empty">No hourly data for today.</p>';
+    const W = 326, H = 94, top = 30, bottom = 66;               // plot area y: top..bottom, labels below
+    const temps = pts.map(p => p.temp), lo = Math.min(...temps), hi = Math.max(...temps), span = Math.max(4, hi - lo);
+    const x = h => (h / 24) * W, y = v => bottom - (v - lo) / span * (bottom - top);
+    const P = pts.map(p => [x(p.h), y(p.temp)]);
+    // Catmull-Rom to Bezier for a smooth line through every hour.
+    let d = `M${P[0][0].toFixed(1)} ${P[0][1].toFixed(1)}`;
+    for (let i = 0; i < P.length - 1; i++) {
+      const p0 = P[i - 1] || P[i], p1 = P[i], p2 = P[i + 1], p3 = P[i + 2] || p2;
+      const c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6], c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+      d += ` C${c1[0].toFixed(1)} ${c1[1].toFixed(1)} ${c2[0].toFixed(1)} ${c2[1].toFixed(1)} ${p2[0].toFixed(1)} ${p2[1].toFixed(1)}`;
+    }
+    const tempAt = h => { // linear between hours, for the "now" dot
+      for (let i = 0; i < pts.length - 1; i++) if (h >= pts[i].h && h <= pts[i + 1].h) return pts[i].temp + (pts[i + 1].temp - pts[i].temp) * (h - pts[i].h) / (pts[i + 1].h - pts[i].h);
+      return null;
+    };
+    let night = '', marks = '';
+    if (t.sunriseH != null && t.sunsetH != null) {
+      night = `<rect x="0" y="16" width="${x(t.sunriseH).toFixed(1)}" height="${bottom - 10}" rx="4" class="night"/><rect x="${x(t.sunsetH).toFixed(1)}" y="16" width="${(W - x(t.sunsetH)).toFixed(1)}" height="${bottom - 10}" rx="4" class="night"/>`;
+      // Sun icon at the top of a dotted line, time centred underneath (kept inside the card).
+      for (const [hh, name, label] of [[t.sunriseH, 'sunrise', t.sunrise], [t.sunsetH, 'sunset', t.sunset]]) {
+        const cx = x(hh), tx = Math.min(W - 30, Math.max(30, cx));
+        marks += `<line x1="${cx.toFixed(1)}" x2="${cx.toFixed(1)}" y1="16" y2="${bottom + 6}" class="sunline"/>
+      <g transform="translate(${(cx - 9).toFixed(1)} -3) scale(.75)" class="sunicon"><path d="${PATHS[name].match(/d="([^"]+)"/)[1]}"/></g>
+      <text x="${tx.toFixed(1)}" y="${bottom + 22}" text-anchor="middle" class="sunlbl">${esc(label)}</text>`;
+      }
+    }
+    const iHi = temps.indexOf(hi), iLo = temps.indexOf(lo);
+    const hiL = `<text x="${Math.min(W - 14, Math.max(14, P[iHi][0])).toFixed(1)}" y="${(P[iHi][1] - 7).toFixed(1)}" text-anchor="middle" class="hilo">${deg(hi)}</text>`;
+    const loL = iLo === iHi ? '' : `<text x="${Math.min(W - 14, Math.max(14, P[iLo][0])).toFixed(1)}" y="${(P[iLo][1] + 15).toFixed(1)}" text-anchor="middle" class="hilo lo">${deg(lo)}</text>`;
+    const nt = tempAt(t.nowH);
+    const now = nt == null ? '' : `<circle cx="${x(t.nowH).toFixed(1)}" cy="${y(nt).toFixed(1)}" r="4" class="nowdot"/>`;
+    const sr = t.sunrise ? `Sunrise ${t.sunrise}. ` : '', ss = t.sunset ? `Sunset ${t.sunset}. ` : '';
+    return `<svg class="curve" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`Temperature today from ${deg(lo)} to ${deg(hi)}. ${sr}${ss}`)}">
+      ${night}<path d="${d}" class="line"/>${marks}${hiL}${loL}${now}</svg>`;
   }
 
   const winRow = w => `<div class="win">
@@ -231,17 +273,22 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
       <span class="r">${d.pop >= 20 ? d.pop + '%' : ''}</span>
       <span class="h">${deg(d.hi)}</span><span class="l">${deg(d.lo)}</span></div>`).join('');
     return `<section class="card glass week" aria-label="Next 6 days">
-  <div class="week-head"><span class="label">Next 6 days</span><span class="week-sum">${esc(weekSummary(next))}</span></div>
+  <div class="week-head"><span class="label">Next 6 days</span></div>
   <div class="week-mini" role="list">${cols}</div>
 </section>`;
   }
 
-  // Summary beside the label: the range and which days look wet (40%+), e.g. "55°–78° · rain Thu, Fri".
-  function weekSummary(days) {
-    const lo = Math.min(...days.map(d => d.lo)), hi = Math.max(...days.map(d => d.hi));
-    const wet = days.filter(d => d.pop >= 40).map(d => d.name);
-    const rain = !wet.length ? 'dry' : wet.length > 3 ? `rain ${wet.length} days` : 'rain ' + wet.join(', ');
-    return `${deg(lo)}–${deg(hi)} · ${rain}`;
+  // Flip in place (no re-render), on every page so swiping keeps the same side up.
+  function toggleFlip() {
+    state.todayFlipped = !state.todayFlipped;
+    pager.querySelectorAll('.card-flip').forEach(c => {
+      c.classList.toggle('flipped', state.todayFlipped);
+      const inner = c.querySelector('.flip-inner');
+      inner.setAttribute('aria-pressed', String(state.todayFlipped));
+      inner.setAttribute('aria-label', `Today. Tap to ${state.todayFlipped ? 'show the forecast' : 'show the temperature curve and sunrise and sunset'}`);
+      c.querySelector('.front').setAttribute('aria-hidden', String(state.todayFlipped));
+      c.querySelector('.back').setAttribute('aria-hidden', String(!state.todayFlipped));
+    });
   }
 
   function pageHTML(place, idx) {
@@ -360,9 +407,14 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     const act = btn.dataset.act;
     if (act === 'refresh' && place) refresh(place);
     else if (act === 'places') openPlaces();
+    else if (act === 'flip') toggleFlip();
     else if (act === 'units-toggle') setUnits(state.units === 'C' ? 'F' : 'C');
     else if (act === 'outlook' && place) openOutlook(place);
     else if (act === 'moon' && place) openMoonInfo(place, btn);
+  });
+
+  pager.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.flip-inner')) { e.preventDefault(); toggleFlip(); }
   });
 
   document.addEventListener('visibilitychange', () => {
