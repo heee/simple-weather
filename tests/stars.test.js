@@ -87,11 +87,11 @@ check('afternoon: tonight is bright-moon Fair, pre-dawn Great, best is pre-dawn'
   assert.strictEqual(best.kind, 'predawn');
 });
 
-check('9 pm: night layout, hero is tonight, titled "Stars tonight"', () => {
+check('9 pm: night layout, inside the evening window so "Stars now"', () => {
   const m = run(clear, '2026-10-22T02:00:00Z'); // 9 pm CDT
   assert.strictEqual(m.isNight, true);
   const h = m.stars.hero;
-  assert.strictEqual(h.title, 'Stars tonight');
+  assert.strictEqual(h.title, 'Stars now');
   assert.strictEqual(h.win.kind, 'tonight');
   assert.strictEqual(h.other.kind, 'predawn');
   assert.ok(/bright moon up/.test(h.summary), h.summary);
@@ -211,6 +211,23 @@ check('verdict table', () => {
   assert.strictEqual(L.cloudClass(21), 'Partly');
   assert.strictEqual(L.cloudClass(50), 'Partly');
   assert.strictEqual(L.cloudClass(51), 'Cloudy');
+});
+
+check('hero title: "Stars tonight" before the evening window, "Stars from …" between windows', () => {
+  const dusk = run(clear, '2026-10-22T00:15:00Z').stars.hero; // 7:15 pm CDT, after sunset, before dark
+  assert.strictEqual(dusk.title, 'Stars tonight');
+  assert.strictEqual(dusk.win.kind, 'tonight');
+  const gap = run(clear, '2026-10-22T07:30:00Z').stars.hero; // 2:30 am CDT, evening window over at 1 am
+  assert.strictEqual(gap.title, 'Stars from 4:30 am');
+  assert.strictEqual(gap.win.kind, 'predawn');
+});
+
+check('after nautical dawn the day layout returns: no hero, outlook starts with "Tonight"', () => {
+  const m = run(clear, '2026-10-22T12:10:00Z'); // 7:10 am CDT: after nautical dawn (~6:35), before sunrise (~7:30)
+  assert.strictEqual(m.isNight, false);
+  assert.strictEqual(m.stars.hero, null);
+  assert.strictEqual(m.stars.outlook[0].name, 'Tonight');
+  assert.strictEqual(m.stars.outlook[0].date, 'Oct 22');
 });
 
 // ---- share text ----

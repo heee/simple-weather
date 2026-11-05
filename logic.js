@@ -181,7 +181,11 @@
     H.time.forEach((t, i) => { const p = parts(ms(t), tz); hourAt.set(`${p.date}T${p.h}`, i); });
 
     const sunrise = ms(D.sunrise[ti]), sunset = ms(D.sunset[ti]);
-    const isNight = now >= sunset || now < sunrise;
+    // Night for the app means stars could be out: from sunset until this morning's nautical dawn
+    // (when the pre-dawn window ends), not until sunrise. Falls back to sunrise where there's no nautical dawn.
+    const todayDawn = sunTimes(ti).nauticalDawn;
+    const dawnEnd = valid(todayDawn) && +todayDawn < sunrise ? +todayDawn : sunrise;
+    const isNight = now >= sunset || now < dawnEnd;
 
     // Current conditions; once the saved data is over an hour old, the hourly forecast is closer to the truth.
     const cur = {
@@ -288,7 +292,7 @@
       }
       return out;
     };
-    const early = now < sunrise;
+    const early = now < dawnEnd;
     const first = early ? ti - 1 : ti;
     const outlook = [];
     for (let k = 0; k < OUTLOOK_NIGHTS; k++) {
@@ -346,7 +350,9 @@
           ? `Dark sky ${span(round5(w.start), round5(darkEnd), tz)}`
           : `Dark sky until ${time(round5(darkEnd), tz)}`;
         hero = {
-          title: nowP.h >= 12 ? 'Stars tonight' : 'Stars now',
+          // "now" only inside a dark window; otherwise say when it starts.
+          title: now >= w.start && now < w.end ? 'Stars now'
+            : w.kind === 'tonight' ? 'Stars tonight' : `Stars from ${time(round5(w.start), tz)}`,
           win: w,
           other: w === tw ? pw : tw,
           summary: w.noData ? 'Beyond the forecast' : `${w.cloud}% cloud · ${moonPhrase}`,
