@@ -242,7 +242,7 @@ a { color: var(--rain); }
 .stars.hero .moon { padding-top: 12px; border-top: 1px solid var(--divider); }
 
 /* 7 days */
-.glass { background: color-mix(in srgb, var(--card) 86%, transparent); }
+.glass { background: color-mix(in srgb, var(--card) 72%, transparent); }
 .week { gap: 4px; }
 .week-head {
   display: flex; align-items: center; gap: 10px; width: 100%; height: 24px; line-height: 1;
