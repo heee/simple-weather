@@ -122,16 +122,20 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
 
   function currentHTML(m) {
     const c = m.cur, t = m.today;
+    // Feels-like and wind only when they matter: 3°F+ off the actual temperature, 10 mph+ wind.
+    const extra = [
+      Math.abs(c.feels - c.temp) >= 3 && `Feels ${deg(c.feels)}`,
+      c.wind >= 10 && `Wind ${c.dir} ${speed(c.wind)}`
+    ].filter(Boolean).join(' · ');
     return `<section class="current" aria-label="Current conditions">
   <div class="current-top">
     <div class="temp">${deg(c.temp)}</div>
     <div class="cond">
-      ${icon(c.icon, m.isNight ? 40 : 48, 1.5, c.label)}
-      <div class="cond-text">${esc(c.label)}</div>
+      <div class="cond-row">${icon(c.icon, 26, 1.6, null)}<span>${esc(c.label)}</span></div>
       <div class="hl">H ${deg(t.hi)}&nbsp;&nbsp;<span class="lo">L ${deg(t.lo)}</span></div>
+      ${extra ? `<div class="meta">${esc(extra)}</div>` : ''}
     </div>
   </div>
-  <div class="meta">Feels like ${deg(c.feels)} · Wind ${c.dir} ${speed(c.wind)}</div>
 </section>`;
   }
 

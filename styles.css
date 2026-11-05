@@ -173,8 +173,8 @@ a { color: var(--rain); }
 .current-top { display: flex; justify-content: space-between; align-items: center; }
 .temp { font-size: 96px; font-weight: 300; line-height: 1; letter-spacing: -3px; }
 .is-night .temp { font-size: 80px; }
-.cond { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
-.cond-text { font-size: 17px; font-weight: 500; text-align: right; }
+.cond { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; text-align: right; }
+.cond-row { display: flex; align-items: center; gap: 8px; font-size: 17px; font-weight: 500; }
 
 .seg { display: flex; border-radius: 10px; background: var(--seg); padding: 2px; }
 .seg button {
@@ -183,7 +183,7 @@ a { color: var(--rain); }
 }
 .seg button[aria-pressed="true"] { background: var(--seg-on); color: var(--text); font-weight: 600; }
 
-.meta { font-size: 15px; color: var(--soft); }
+.meta { font-size: 14px; color: var(--soft); }
 
 /* ---- cards ---- */
 
