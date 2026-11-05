@@ -210,7 +210,7 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
   <button type="button" class="week-head" data-act="week" aria-expanded="${open}">
     <span class="label">7 days</span><span class="week-sum">${esc(weekSummary(m))}</span>${icon('chevron', 16, 2)}
   </button>
-  ${open ? `<div role="list">${rows}</div>` : ''}
+  <div class="week-rows" role="list">${rows}</div>
 </section>`;
   }
 
@@ -330,7 +330,14 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
     if (act === 'refresh' && place) refresh(place);
     else if (act === 'places') openPlaces();
     else if (act === 'units-toggle') setUnits(state.units === 'C' ? 'F' : 'C');
-    else if (act === 'week') { state.weekOpen = !state.weekOpen; renderAll(); }
+    else if (act === 'week') {
+      // Toggle in place: rebuilding the page made iOS Safari drop the content above until the next scroll.
+      state.weekOpen = !state.weekOpen;
+      pager.querySelectorAll('.week').forEach(w => {
+        w.classList.toggle('open', state.weekOpen);
+        w.querySelector('.week-head').setAttribute('aria-expanded', String(state.weekOpen));
+      });
+    }
     else if (act === 'outlook' && place) openOutlook(place);
     else if (act === 'moon' && place) openMoonInfo(place, btn);
   });

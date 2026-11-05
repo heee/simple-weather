@@ -242,18 +242,16 @@ a { color: var(--rain); }
 .stars.hero .moon { padding-top: 12px; border-top: 1px solid var(--divider); }
 
 /* 7 days */
-.glass {
-  background: color-mix(in srgb, var(--card) 86%, transparent);
-  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
-}
+.glass { background: color-mix(in srgb, var(--card) 86%, transparent); }
 .week { gap: 4px; }
 .week-head {
-  display: flex; align-items: center; gap: 10px; width: 100%; min-height: 24px;
+  display: flex; align-items: center; gap: 10px; width: 100%; height: 24px; line-height: 1;
   border: 0; background: transparent; padding: 0; margin: 0; text-align: left;
 }
 .week-sum { flex: 1; text-align: right; font-size: 14px; font-weight: 500; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .week-head svg { flex: none; color: var(--muted); transition: transform .2s; }
-.week.open .week-head { padding-bottom: 10px; }
+.week-rows { display: none; margin-top: 10px; }
+.week.open .week-rows { display: block; }
 .week.open .week-head svg { transform: rotate(180deg); }
 .day {
   display: grid; grid-template-columns: 52px 30px 44px 34px 1fr 34px; align-items: center; gap: 8px;
