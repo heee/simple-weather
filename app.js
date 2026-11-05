@@ -171,7 +171,7 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
     const s = m.stars, moon = s.moon;
     const w = s.best || (s.tonight.none ? s.predawn : s.tonight);
     const name = (w.name || 'Tonight').toLowerCase();
-    return `<section class="card stars compact" aria-label="Stargazing">
+    return `<section class="card glass stars compact" aria-label="Stargazing">
   <div class="moon">
     <button type="button" class="moon-btn" data-act="moon" aria-haspopup="dialog" aria-label="${esc(moon.name)} moon, ${moon.pct}% lit">${moonIcon(moon.phase, moon.fraction, 34, moon.name + ' moon')}</button>
     <div><span class="n">Stars ${esc(name)}</span><span class="n v-${w.verdict.cls}"> · ${esc(w.verdict.text)}</span><span class="s">${esc(w.when)}</span></div>
