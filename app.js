@@ -611,9 +611,15 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
     const seq = ++searchSeq;
     results.innerHTML = '<li><span class="msg">Searching…</span></li>';
     try {
-      const data = await getJSON('https://geocoding-api.open-meteo.com/v1/search?' + new URLSearchParams({ name: q, count: 8, language: 'en', format: 'json' }));
-      if (seq !== searchSeq) return;
-      found = (data.results || []);
+      // The geocoder only matches names, so search the city part and filter by country/state ourselves.
+      found = [];
+      for (const { name, quals } of L.placeQueries(q)) {
+        if (name.length < 2) continue;
+        const data = await getJSON('https://geocoding-api.open-meteo.com/v1/search?' + new URLSearchParams({ name, count: quals.length ? 50 : 8, language: 'en', format: 'json' }));
+        if (seq !== searchSeq) return;
+        found = (data.results || []).filter(r => L.placeMatches(r, quals)).slice(0, 8);
+        if (found.length) break;
+      }
       results.innerHTML = found.length ? found.map((r, i) => `<li><button type="button" class="pick" data-pick="${i}">
   <b>${esc(r.name)}</b><span>${esc([r.admin1, r.country].filter(Boolean).join(', '))}</span></button></li>`).join('')
         : '<li><span class="msg">No places found.</span></li>';

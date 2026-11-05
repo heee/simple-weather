@@ -22,6 +22,7 @@ Run the stargazing checks (verified against USNO almanac values for Houston):
 
 ```
 node tests/stars.test.js
+node tests/places.test.js   # place search parsing
 ```
 
 When you change any shell file, bump `VERSION` in `sw.js` so installed copies pick it up.

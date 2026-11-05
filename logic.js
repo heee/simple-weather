@@ -362,5 +362,39 @@
     };
   }
 
-  root.SWLogic = { build, parts, time, span, group, label, iconName, compass, phaseName, verdict, cloudClass, hazeClass, moonEvents };
+  /* ---------- place search ---------- */
+
+  const fold = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  const US_STATES = { al: 'alabama', ak: 'alaska', az: 'arizona', ar: 'arkansas', ca: 'california', co: 'colorado', ct: 'connecticut',
+    de: 'delaware', fl: 'florida', ga: 'georgia', hi: 'hawaii', id: 'idaho', il: 'illinois', in: 'indiana', ia: 'iowa', ks: 'kansas',
+    ky: 'kentucky', la: 'louisiana', me: 'maine', md: 'maryland', ma: 'massachusetts', mi: 'michigan', mn: 'minnesota', ms: 'mississippi',
+    mo: 'missouri', mt: 'montana', ne: 'nebraska', nv: 'nevada', nh: 'new hampshire', nj: 'new jersey', nm: 'new mexico', ny: 'new york',
+    nc: 'north carolina', nd: 'north dakota', oh: 'ohio', ok: 'oklahoma', or: 'oregon', pa: 'pennsylvania', ri: 'rhode island',
+    sc: 'south carolina', sd: 'south dakota', tn: 'tennessee', tx: 'texas', ut: 'utah', vt: 'vermont', va: 'virginia', wa: 'washington',
+    wv: 'west virginia', wi: 'wisconsin', wy: 'wyoming', dc: 'district of columbia' };
+  const ALIASES = { uk: 'gb', 'great britain': 'gb', britain: 'gb', england: 'gb', usa: 'us', america: 'us', 'u.s.': 'us', 'u.s.a.': 'us' };
+
+  // Ways to read a search: "London, United" -> name "London" narrowed by "united".
+  // Without a comma, trailing words may also be a country or state ("London UK", "Paris Texas").
+  function placeQueries(q) {
+    const parts = String(q).split(',').map(s => s.trim()).filter(Boolean);
+    if (!parts.length) return [];
+    if (parts.length > 1) return [{ name: parts[0], quals: parts.slice(1).map(fold) }];
+    const words = parts[0].split(/\s+/);
+    const out = [{ name: parts[0], quals: [] }];
+    for (let i = words.length - 1; i >= 1; i--) out.push({ name: words.slice(0, i).join(' '), quals: [fold(words.slice(i).join(' '))] });
+    return out;
+  }
+
+  // Does a geocoding result fit every qualifier? Each must start the country, state, county,
+  // country code or a word in them; "UK", "USA" and US state codes are understood.
+  function placeMatches(r, quals) {
+    const fields = [r.country, r.admin1, r.admin2, r.country_code].map(fold).filter(Boolean);
+    return quals.every(q => {
+      const want = [q, ALIASES[q], US_STATES[q]].filter(Boolean);
+      return want.some(w => fields.some(f => f === w || f.startsWith(w) || f.split(' ').some(x => x.startsWith(w))));
+    });
+  }
+
+  root.SWLogic = { placeQueries, placeMatches, build, parts, time, span, group, label, iconName, compass, phaseName, verdict, cloudClass, hazeClass, moonEvents };
 })(typeof window !== 'undefined' ? window : globalThis);
