@@ -283,7 +283,7 @@ a { color: var(--rain); }
   width: 100%; max-width: 520px; max-height: 88dvh; margin: auto auto 0; padding: 8px 16px max(20px, env(safe-area-inset-bottom));
   border: 0; border-radius: 20px 20px 0 0; background: var(--bg); color: var(--text);
 }
-.sheet::backdrop { background: rgba(5, 10, 20, .35); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.sheet::backdrop { background: rgba(5, 10, 20, .25); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .sheet[open] { display: flex; flex-direction: column; gap: 12px; animation: up .22s ease-out; }
 @keyframes up { from { transform: translateY(40px); opacity: 0; } }
 .sheet.searching { margin: max(8px, env(safe-area-inset-top)) auto auto; border-radius: 20px; padding-bottom: 12px; }
@@ -374,7 +374,7 @@ a { color: var(--rain); }
   border: 1px solid var(--hero-border); border-radius: 12px; padding: 14px 16px 16px;
   background: var(--card); color: var(--text); box-shadow: 0 12px 40px rgba(5, 10, 20, .35);
 }
-.pop::backdrop { background: rgba(5, 10, 20, .2); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.pop::backdrop { background: rgba(5, 10, 20, .15); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .pop[open] { animation: pop .16s ease-out; }
 @keyframes pop { from { transform: translateY(-6px) scale(.98); opacity: 0; } }
 .pop-head { display: flex; align-items: center; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--divider); }
