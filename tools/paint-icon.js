@@ -1,4 +1,4 @@
-// Paints the app icons in icons/ in the same soft style as img/sky/.
+// Paints the app icons in icons/ in the same soft style as img/sky/: a crescent moon and three stars.
 // Run: node tools/paint-icon.js   (needs Playwright)
 const { chromium } = require('playwright');
 const fs = require('fs');
@@ -57,8 +57,6 @@ function paint({ size, scale }) {
   const cv = document.getElementById('c');
   cv.width = S; cv.height = S;
   const ctx = cv.getContext('2d');
-  let seed = 7;
-  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
   const layer = () => { const c = document.createElement('canvas'); c.width = S; c.height = S; return c; };
   const radial = (x, y, r, stops) => {
     const g = ctx.createRadialGradient(x, y, 0, x, y, r);
@@ -66,77 +64,37 @@ function paint({ size, scale }) {
     return g;
   };
 
-  // Night-blue sky, a little lighter at the top like the dark-theme backgrounds.
+  // Night-blue sky, a little lighter at the top like the dark-theme backgrounds (full bleed).
   const bg = ctx.createLinearGradient(0, 0, 0, S);
-  bg.addColorStop(0, '#22406B'); bg.addColorStop(0.55, '#14233D'); bg.addColorStop(1, '#0A1120');
+  bg.addColorStop(0, '#22406B'); bg.addColorStop(0.6, '#14233D'); bg.addColorStop(1, '#0A1120');
   ctx.fillStyle = bg; ctx.fillRect(0, 0, S, S);
 
-  // Faint Milky Way across the top right.
-  const band = layer(), b = band.getContext('2d');
-  b.translate(S * 0.62, S * 0.3); b.rotate(-0.6);
-  for (let i = 0; i < 40; i++) {
-    const x = (rnd() - 0.5) * S * 1.4, y = (rnd() - 0.5) * 130, r = 90 + rnd() * 160;
-    const g = b.createRadialGradient(x, y, 0, x, y, r);
-    g.addColorStop(0, 'rgba(160,178,235,.10)'); g.addColorStop(1, 'rgba(160,178,235,0)');
-    b.fillStyle = g; b.beginPath(); b.arc(x, y, r, 0, 7); b.fill();
-  }
-  b.fillStyle = '#DCE4FA';
-  for (let i = 0; i < 700; i++) {
-    const x = (rnd() - 0.5) * S * 1.4, y = (rnd() + rnd() + rnd() - 1.5) * 120;
-    b.globalAlpha = 0.12 + rnd() * 0.3; b.beginPath(); b.arc(x, y, 1 + rnd() * 1.4, 0, 7); b.fill();
-  }
-  ctx.save(); ctx.filter = 'blur(1.5px)'; ctx.drawImage(band, 0, 0); ctx.restore();
-
-  // Stars, sun and cloud are painted around the centre and scaled for the maskable safe zone.
+  // Crescent and stars are painted around the centre and scaled for the maskable safe zone.
   ctx.save();
   ctx.translate(S / 2, S / 2); ctx.scale(scale, scale); ctx.translate(-S / 2, -S / 2);
+  const big = 3 * S; // oversized fills so glows are never clipped when scaled down
 
-  // A few bright stars (sized to survive downscaling) in the open sky.
-  for (const [x, y, r] of [[0.70, 0.13, 9], [0.82, 0.24, 12], [0.90, 0.36, 7], [0.60, 0.07, 6], [0.16, 0.84, 7], [0.13, 0.20, 6], [0.93, 0.13, 5]]) {
-    ctx.fillStyle = radial(x * S, y * S, r * 4.5, [[0, 'rgba(235,242,255,.55)'], [1, 'rgba(235,242,255,0)']]);
-    ctx.beginPath(); ctx.arc(x * S, y * S, r * 4.5, 0, 7); ctx.fill();
+  // Soft moonlight around the crescent.
+  const mx = S * 0.46, my = S * 0.54, mr = S * 0.25;
+  ctx.fillStyle = radial(mx - mr * 0.3, my, S * 0.5, [[0, 'rgba(255,236,200,.14)'], [1, 'rgba(255,236,200,0)']]);
+  ctx.fillRect(-S, -S, big, big);
+
+  // Pale-gold crescent, lit on the left like the in-app moon icon, with a glow hugging it.
+  const disc = layer(), d = disc.getContext('2d');
+  const dg = d.createRadialGradient(mx - mr * 0.5, my, 0, mx, my, mr);
+  dg.addColorStop(0, '#FFF8E2'); dg.addColorStop(0.6, '#F7E6B4'); dg.addColorStop(1, '#E9CF8C');
+  d.fillStyle = dg; d.beginPath(); d.arc(mx, my, mr, 0, 7); d.fill();
+  d.globalCompositeOperation = 'destination-out';
+  d.beginPath(); d.arc(mx + mr * 0.42, my - mr * 0.2, mr * 0.86, 0, 7); d.fill();
+  ctx.save(); ctx.filter = 'blur(22px)'; ctx.globalAlpha = 0.5; ctx.drawImage(disc, 0, 0); ctx.restore();
+  ctx.save(); ctx.filter = 'blur(2px)'; ctx.drawImage(disc, 0, 0); ctx.restore();
+
+  // Three soft stars, sized to survive downscaling.
+  for (const [x, y, r] of [[0.74, 0.26, 12], [0.82, 0.45, 7], [0.66, 0.14, 6]]) {
+    ctx.fillStyle = radial(x * S, y * S, r * 5, [[0, 'rgba(235,242,255,.5)'], [1, 'rgba(235,242,255,0)']]);
+    ctx.beginPath(); ctx.arc(x * S, y * S, r * 5, 0, 7); ctx.fill();
     ctx.fillStyle = '#F2F5FB'; ctx.beginPath(); ctx.arc(x * S, y * S, r, 0, 7); ctx.fill();
   }
-
-  // Moon: soft moonlight halo, then a glowing pale-gold crescent (lit on the left, like the in-app moon icon).
-  const sx = S * 0.37, sy = S * 0.35, sr = S * 0.2;
-  ctx.save(); ctx.globalCompositeOperation = 'screen';
-  ctx.fillStyle = radial(sx - sr * 0.45, sy + sr * 0.1, sr * 2.6, [[0, 'rgba(255,238,200,.38)'], [0.35, 'rgba(200,210,255,.12)'], [1, 'rgba(200,210,255,0)']]);
-  ctx.fillRect(-S, -S, 3 * S, 3 * S); // oversized so the halo is not clipped when scaled down
-  ctx.restore();
-  const disc = layer(), d = disc.getContext('2d');
-  const dg = d.createRadialGradient(sx - sr * 0.5, sy, 0, sx, sy, sr);
-  dg.addColorStop(0, '#FFF8E2'); dg.addColorStop(0.6, '#F7E6B4'); dg.addColorStop(1, '#E9CF8C');
-  d.fillStyle = dg; d.beginPath(); d.arc(sx, sy, sr, 0, 7); d.fill();
-  d.globalCompositeOperation = 'destination-out';
-  d.beginPath(); d.arc(sx + sr * 0.48, sy - sr * 0.22, sr * 0.86, 0, 7); d.fill();
-  // a glow hugging the crescent itself
-  ctx.save(); ctx.filter = 'blur(18px)'; ctx.globalAlpha = 0.55; ctx.drawImage(disc, 0, 0); ctx.restore();
-  ctx.save(); ctx.filter = 'blur(2.5px)'; ctx.drawImage(disc, 0, 0); ctx.restore();
-
-  // Cloud: soft shadow, then overlapping puffs lit from above.
-  const cx = S * 0.55, cy = S * 0.63, k0 = 0.78; // k0 scales the cloud
-  const puffs = [[-0.27, 0.05, 0.13], [-0.12, -0.06, 0.17], [0.07, -0.12, 0.2], [0.24, -0.01, 0.15], [0.33, 0.07, 0.1]].map(([x, y, r]) => [cx + x * S * k0, cy + y * S * k0, r * S * k0]);
-  const shape = c => {
-    puffs.forEach(([x, y, r]) => { c.beginPath(); c.arc(x, y, r, 0, 7); c.fill(); });
-    const l = cx - S * 0.38 * k0, rr = cx + S * 0.42 * k0, top = cy - S * 0.02 * k0, bot = cy + S * 0.15 * k0, k = S * 0.08 * k0;
-    c.beginPath(); c.moveTo(l + k, top); c.lineTo(rr - k, top); c.quadraticCurveTo(rr, top, rr, top + k);
-    c.lineTo(rr, bot - k); c.quadraticCurveTo(rr, bot, rr - k, bot); c.lineTo(l + k, bot);
-    c.quadraticCurveTo(l, bot, l, bot - k); c.lineTo(l, top + k); c.quadraticCurveTo(l, top, l + k, top); c.fill();
-  };
-  const sh = layer(), s = sh.getContext('2d');
-  s.fillStyle = 'rgba(3,8,20,.55)'; s.translate(0, S * 0.03); shape(s);
-  ctx.save(); ctx.filter = 'blur(28px)'; ctx.drawImage(sh, 0, 0); ctx.restore();
-  const cl = layer(), c = cl.getContext('2d');
-  const cg = c.createLinearGradient(0, cy - S * 0.33 * k0, 0, cy + S * 0.16 * k0);
-  cg.addColorStop(0, '#FFFFFF'); cg.addColorStop(0.55, '#F1F5FA'); cg.addColorStop(1, '#C9D6E6');
-  c.fillStyle = cg; shape(c);
-  // pale moonlit rim on the cloud's upper left
-  c.globalCompositeOperation = 'source-atop';
-  const rim = c.createRadialGradient(sx, sy, sr * 0.8, sx, sy, sr * 2.2);
-  rim.addColorStop(0, 'rgba(255,236,190,.4)'); rim.addColorStop(1, 'rgba(255,236,190,0)');
-  c.fillStyle = rim; c.fillRect(0, 0, S, S);
-  ctx.save(); ctx.filter = 'blur(2px)'; ctx.drawImage(cl, 0, 0); ctx.restore();
   ctx.restore();
 
   // Downscale in halves for a clean small icon.
