@@ -195,13 +195,48 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
       }
     }
     const iHi = temps.indexOf(hi), iLo = temps.indexOf(lo);
-    const hiL = `<text x="${Math.min(W - 14, Math.max(14, P[iHi][0])).toFixed(1)}" y="${(P[iHi][1] - 7).toFixed(1)}" text-anchor="middle" class="hilo">${deg(hi)}</text>`;
-    const loL = iLo === iHi ? '' : `<text x="${Math.min(W - 14, Math.max(14, P[iLo][0])).toFixed(1)}" y="${(P[iLo][1] + 15).toFixed(1)}" text-anchor="middle" class="hilo lo">${deg(lo)}</text>`;
     const nt = tempAt(t.nowH);
+    const srT = t.sunriseH != null ? tempAt(t.sunriseH) : null, ssT = t.sunsetH != null ? tempAt(t.sunsetH) : null;
+
+    // Labels sit above the curve, placed in priority order: now, sunrise, sunset, high, low.
+    // Each tries centred, then fully left or right; it must not touch a sunrise/sunset line or an earlier
+    // label. If nothing fits it is dropped (e.g. a low right at sunrise shows once, as the sunrise temp).
+    const lines = [t.sunriseH, t.sunsetH].filter(v => v != null).map(x);
+    const placed = [], boxes = lines.map(lx => ({ l: lx - 9, r: lx + 9, t: -4, b: 15 })); // sun icons
+    const shown = []; // [x, text] of placed labels, to skip a high/low that would repeat one nearby
+    const wOf = txt => txt.length * 7.6 + 2, hit = (a, b) => !(a.r < b.l || a.l > b.r || a.b < b.t || a.t > b.b);
+    const curveYAt = px => { const v = tempAt(Math.min(pts[pts.length - 1].h, Math.max(pts[0].h, px / W * 24))); return v == null ? H : y(v); };
+    const clearsCurve = box => { for (let px = box.l; px <= box.r; px += 3) if (box.b + 3 > curveYAt(px)) return false; return true; };
+    function addLabel(hx, temp, cls, onLine, skipIfShown) {
+      if (temp == null) return;
+      const txt = deg(temp), w = wOf(txt), cx = x(hx);
+      if (skipIfShown && shown.some(([sx, st]) => st === txt && Math.abs(sx - cx) < 60)) return;
+      const sides = onLine ? [cx - 11 - w / 2, cx + 11 + w / 2] : [cx, cx - w / 2 - 8, cx + w / 2 + 8];
+      for (const lift of [8, 16, 24]) for (const mid of sides) {
+        const base = y(temp) - lift - (cls.includes('now') ? 2 : 0);
+        const box = { l: mid - w / 2, r: mid + w / 2, t: base - 12, b: base + 2 };
+        if (box.l < 0 || box.r > W || box.t < -2) continue;
+        if (lines.some(lx => lx >= box.l - 3 && lx <= box.r + 3)) continue;
+        if (boxes.some(o => hit(o, box)) || !clearsCurve(box)) continue;
+        boxes.push(box); shown.push([cx, txt]);
+        placed.push(`<text x="${mid.toFixed(1)}" y="${base.toFixed(1)}" text-anchor="middle" class="${cls}">${txt}</text>`);
+        return;
+      }
+    }
+    addLabel(t.nowH, nt, 'hilo nowlbl', false);
+    addLabel(t.sunriseH, srT, 'hilo sunT', true);
+    addLabel(t.sunsetH, ssT, 'hilo sunT', true);
+    addLabel(pts[iHi].h, hi, 'hilo', false, true);
+    if (iLo !== iHi) addLabel(pts[iLo].h, lo, 'hilo lo', false, true);
+
+    const sunDots = [[t.sunriseH, srT], [t.sunsetH, ssT]].filter(([h, v]) => h != null && v != null)
+      .map(([h, v]) => `<circle cx="${x(h).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" class="sundot"/>`).join('');
     const now = nt == null ? '' : `<circle cx="${x(t.nowH).toFixed(1)}" cy="${y(nt).toFixed(1)}" r="4" class="nowdot"/>`;
-    const sr = t.sunrise ? `Sunrise ${t.sunrise}. ` : '', ss = t.sunset ? `Sunset ${t.sunset}. ` : '';
-    return `<svg class="curve" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`Temperature today from ${deg(lo)} to ${deg(hi)}. ${sr}${ss}`)}">
-      ${night}<path d="${d}" class="line"/>${marks}${hiL}${loL}${now}</svg>`;
+    const sr = t.sunrise ? `Sunrise ${t.sunrise}${srT != null ? ', ' + deg(srT) : ''}. ` : '';
+    const ss = t.sunset ? `Sunset ${t.sunset}${ssT != null ? ', ' + deg(ssT) : ''}. ` : '';
+    const nw = nt != null ? `Now ${deg(nt)}. ` : '';
+    return `<svg class="curve" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`Temperature today from ${deg(lo)} to ${deg(hi)}. ${nw}${sr}${ss}`)}">
+      ${night}<path d="${d}" class="line"/>${marks}${sunDots}${now}${placed.join('')}</svg>`;
   }
 
   const winRow = w => `<div class="win">
