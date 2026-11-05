@@ -105,7 +105,6 @@
       const tag = age > STALE_AFTER ? (navigator.onLine === false ? ' · offline' : ' · stale') : '';
       if (tag) updated = `<span class="stale">Updated ${L.time(rec.fetchedAt, undefined, true)}${tag}</span>`;
     } else if (loading) updated = '<span>Loading…</span>';
-    const dots = state.places.map((_, i) => `<span class="${i === idx ? 'on' : ''}"></span>`).join('');
     return `<div class="header">
   <button type="button" class="place-btn" data-act="places" aria-label="${esc(title)}, ${esc(sub)}. Manage places">
     <span class="place-name">${esc(title)}${icon('chevron', 14, 2)}</span>
@@ -115,8 +114,7 @@
     <button type="button" class="icon-btn${loading ? ' spinning' : ''}" data-act="refresh" aria-label="Refresh">${icon('refresh', 20, 1.8)}</button>
   </div>
 </div>
-${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’t refresh. Showing the saved forecast.</div>' : ''}
-${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${idx + 1} of ${state.places.length}">${dots}</div>` : ''}`;
+${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’t refresh. Showing the saved forecast.</div>' : ''}`;
   }
 
   function currentHTML(m) {
@@ -230,7 +228,18 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
 
   const pager = document.getElementById('pager');
 
+  // One floating set of page dots at the top centre, shown only with 2+ places.
+  const dotsEl = document.getElementById('dots');
+  function renderDots() {
+    const n = state.places.length;
+    dotsEl.hidden = n < 2;
+    dotsEl.setAttribute('aria-label', `Place ${state.active + 1} of ${n}`);
+    dotsEl.innerHTML = state.places.map((_, i) => `<span class="${i === state.active ? 'on' : ''}"></span>`).join('');
+  }
+
   function buildPages() {
+    if (state.active >= state.places.length) state.active = 0;
+    renderDots();
     pager.innerHTML = state.places.map(p => `<div class="page" data-id="${esc(p.id)}"></div>`).join('');
     pager.querySelectorAll('.page').forEach(page => page.addEventListener('scroll', onPageScroll, { passive: true }));
     renderAll();
@@ -253,7 +262,7 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
 
   pager.addEventListener('scroll', () => {
     const i = Math.round(pager.scrollLeft / Math.max(1, pager.clientWidth));
-    if (i !== state.active && i >= 0 && i < state.places.length) state.active = i;
+    if (i !== state.active && i >= 0 && i < state.places.length) { state.active = i; renderDots(); }
   }, { passive: true });
 
   /* ---------- data ---------- */
@@ -421,7 +430,7 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
     let m = null;
     try { m = rec && L.build(place, rec, Date.now()); } catch (e) { console.error(e); }
     if (!m) return;
-    document.getElementById('outlook-sub').textContent = `${place.name} · next ${m.stars.outlook.length} nights`;
+    document.getElementById('outlook-sub').textContent = place.name;
     outlookList.innerHTML = outlookHTML(m.stars.outlook);
     outlookList.scrollTop = 0;
     if (typeof outlookSheet.showModal === 'function') outlookSheet.showModal(); else outlookSheet.setAttribute('open', '');

@@ -20,6 +20,7 @@
 </head>
 <body>
 <main id="pager" class="pager" aria-live="polite"></main>
+<div id="dots" class="dots" role="img" hidden></div>
 
 <dialog id="places" class="sheet" aria-labelledby="places-title">
   <div class="sheet-head">
@@ -45,10 +46,8 @@
 
 <dialog id="outlook" class="sheet" aria-labelledby="outlook-title">
   <div class="sheet-head">
-    <div class="sheet-titles">
-      <h2 id="outlook-title">Star outlook</h2>
-      <span id="outlook-sub" class="sheet-sub"></span>
-    </div>
+    <h2 id="outlook-title">Star outlook</h2>
+    <span id="outlook-sub" class="sheet-sub"></span>
   </div>
   <div id="outlook-list" class="outlook"></div>
   <button type="button" class="sheet-close" id="outlook-close">Close</button>
