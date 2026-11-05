@@ -235,9 +235,9 @@ a { color: var(--rain); }
 .stars.compact { padding: 12px 16px; }
 
 .stars.hero { background: var(--hero); border: 1px solid var(--hero-border); border-radius: 12px; padding: 18px 16px; gap: 14px; }
-.hero-main { display: flex; flex-direction: column; gap: 4px; }
+.hero-main { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.hero-text { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .hero-verdict { font-size: 22px; font-weight: 700; line-height: 1.1; }
-.stars.hero .card-head { align-items: center; }
 .hero-sum { font-size: 15px; color: var(--soft); }
 .stars.hero .moon { padding-top: 13px; background: var(--divider-fade) top / 100% 1px no-repeat; }
 

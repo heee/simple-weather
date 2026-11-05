@@ -188,8 +188,8 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     const h = m.stars.hero;
     return `<section class="card stars hero" aria-label="Stargazing">
   <div class="hero-main">
-    <div class="card-head"><span class="label">${h.title}</span><span class="hero-verdict v-${h.win.verdict.cls}">${esc(h.win.verdict.text.split(' · ')[0])}</span></div>
-    <span class="hero-sum">${esc(h.summary)}</span>
+    <div class="hero-text"><span class="label">${h.title}</span><span class="hero-sum">${esc(h.summary)}</span></div>
+    <span class="hero-verdict v-${h.win.verdict.cls}">${esc(h.win.verdict.text.split(' · ')[0])}</span>
   </div>
   ${moonHTML(m.stars.moon, 40)}
 </section>`;
