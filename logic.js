@@ -223,7 +223,6 @@
         lo: D.temperature_2m_min[i], hi: D.temperature_2m_max[i]
       });
     }
-    const weekMin = Math.min(...days.map(d => d.lo)), weekMax = Math.max(...days.map(d => d.hi));
 
     // Stars: tonight = end of astronomical twilight → 1:00 am; pre-dawn = 4:30 am → nautical dawn.
     const tonight = i => {
@@ -357,7 +356,7 @@
     }
 
     return {
-      tz, isNight, cur, today: todayCard, days, weekMin, weekMax,
+      tz, isNight, cur, today: todayCard, days,
       stars: { tonight: tw, predawn: pw, best, hero, moon, outlook }
     };
   }

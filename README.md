@@ -1,6 +1,6 @@
 # Simple Weather
 
-A single-page iPhone home-screen web app: current temperature, today, rain, a 7-day forecast, and whether the sky is clear for stargazing.
+A single-page iPhone home-screen web app: current temperature, today, rain, the next 6 days, and whether the sky is clear for stargazing.
 
 - Opens instantly from the last saved forecast (localStorage), then refreshes in the background.
 - Works offline: a service worker caches the app shell; SunCalc and the Manrope font are vendored.

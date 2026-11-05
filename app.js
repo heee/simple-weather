@@ -25,8 +25,7 @@
     wx: {},
     loading: new Set(),
     failed: new Set(),
-    active: 0,
-    weekOpen: false
+    active: 0
   };
   if (!Array.isArray(state.places) || !state.places.length) state.places = DEFAULT_PLACES.slice();
   for (const p of state.places) state.wx[p.id] = store.get(wxKey(p.id), null);
@@ -191,40 +190,25 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
 </section>`;
   }
 
+  // The next 6 days as small columns, like the Today card (today itself is in the Today card).
   function weekHTML(m) {
-    const range = Math.max(1, m.weekMax - m.weekMin);
-    const rows = m.days.map(d => {
-      const left = (d.lo - m.weekMin) / range * 100;
-      const width = Math.max(2, (d.hi - d.lo) / range * 100);
-      return `<div class="day" role="listitem" aria-label="${d.name}: ${esc(d.label)}, low ${deg(d.lo)}, high ${deg(d.hi)}${d.pop >= 20 ? `, ${d.pop}% chance of rain` : ''}">
-    <span class="d">${d.name}</span>
-    ${icon(d.icon, 24, 1.6, d.label)}
-    <span class="p">${d.pop >= 20 ? d.pop + '%' : ''}</span>
-    <span class="lo">${deg(d.lo)}</span>
-    <div class="bar"><i style="left:${left.toFixed(1)}%;width:${width.toFixed(1)}%"></i></div>
-    <span class="hi">${deg(d.hi)}</span>
-  </div>`;
-    }).join('');
-    const open = state.weekOpen;
-    // Collapsed: the next 6 days as small columns, like the Today card. Tap opens the full list.
-    const mini = m.days.slice(1, 7).map(d => `<span class="md">
+    const next = m.days.slice(1, 7);
+    const cols = next.map(d => `<div class="md" role="listitem" aria-label="${d.name}: ${esc(d.label)}, high ${deg(d.hi)}, low ${deg(d.lo)}${d.pop >= 20 ? `, ${d.pop}% chance of rain` : ''}">
       <span class="t">${d.name}</span>${icon(d.icon, 24, 1.6)}
       <span class="r">${d.pop >= 20 ? d.pop + '%' : ''}</span>
-      <span class="h">${deg(d.hi)}</span><span class="l">${deg(d.lo)}</span></span>`).join('');
-    return `<section class="card glass week${open ? ' open' : ''}" aria-label="7-day forecast">
-  <button type="button" class="week-head" data-act="week" aria-expanded="${open}">
-    <span class="label">7 days</span><span class="week-sum">${esc(weekSummary(m))}</span>${icon('chevron', 16, 2)}
-  </button>
-  <button type="button" class="week-mini" data-act="week" tabindex="-1" aria-hidden="true">${mini}</button>
-  <div class="week-rows" role="list">${rows}</div>
+      <span class="h">${deg(d.hi)}</span><span class="l">${deg(d.lo)}</span></div>`).join('');
+    return `<section class="card glass week" aria-label="Next 6 days">
+  <div class="week-head"><span class="label">Next 6 days</span><span class="week-sum">${esc(weekSummary(next))}</span></div>
+  <div class="week-mini" role="list">${cols}</div>
 </section>`;
   }
 
-  // Collapsed 7-day line: the week's range and which days look wet (40%+), e.g. "55°–78° · rain Thu, Fri".
-  function weekSummary(m) {
-    const wet = m.days.filter(d => d.pop >= 40).map(d => d.name === 'Today' ? 'today' : d.name);
+  // Summary beside the label: the range and which days look wet (40%+), e.g. "55°–78° · rain Thu, Fri".
+  function weekSummary(days) {
+    const lo = Math.min(...days.map(d => d.lo)), hi = Math.max(...days.map(d => d.hi));
+    const wet = days.filter(d => d.pop >= 40).map(d => d.name);
     const rain = !wet.length ? 'dry' : wet.length > 3 ? `rain ${wet.length} days` : 'rain ' + wet.join(', ');
-    return `${deg(m.weekMin)}–${deg(m.weekMax)} · ${rain}`;
+    return `${deg(lo)}–${deg(hi)} · ${rain}`;
   }
 
   function pageHTML(place, idx) {
@@ -336,20 +320,6 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
     if (act === 'refresh' && place) refresh(place);
     else if (act === 'places') openPlaces();
     else if (act === 'units-toggle') setUnits(state.units === 'C' ? 'F' : 'C');
-    else if (act === 'week') {
-      // Toggle in place: rebuilding the page made iOS Safari drop the content above until the next scroll.
-      state.weekOpen = !state.weekOpen;
-      pager.querySelectorAll('.week').forEach(w => {
-        w.classList.toggle('open', state.weekOpen);
-        w.querySelector('.week-head').setAttribute('aria-expanded', String(state.weekOpen));
-      });
-      // Belt and braces for iOS Safari: a 1px scroll nudge makes it repaint the page.
-      if (page) requestAnimationFrame(() => {
-        const y = page.scrollTop;
-        page.scrollTop = y + 1;
-        requestAnimationFrame(() => { page.scrollTop = y; });
-      });
-    }
     else if (act === 'outlook' && place) openOutlook(place);
     else if (act === 'moon' && place) openMoonInfo(place, btn);
   });

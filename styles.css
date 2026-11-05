@@ -16,8 +16,6 @@
   --soft: #3C4E60;
   --divider: #E3E9EF;
   --rain: #1F5FB8;
-  --track: #E3E9EF;
-  --fill: #E08A3C;
   --dot: #B7C3CF;
   --seg: #DCE4EC;
   --seg-on: #FFFFFF;
@@ -44,8 +42,6 @@
     --soft: #C9D3E0;
     --divider: #24304A;
     --rain: #8CBBFF;
-    --track: #26314A;
-    --fill: #E9A15A;
     --dot: #3A4760;
     --seg: #1C2740;
     --seg-on: #33415E;
@@ -115,8 +111,8 @@ a { color: var(--rain); }
   display: flex;
   flex-direction: column;
   gap: 14px;
-  /* Always 1px taller than the page so it scrolls from the start. When expanding the 7-day
-     card first made the page scrollable, iOS Safari rebuilt layers and drew a blank screen. */
+  /* Always 1px taller than the page so it scrolls from the start: when a page first became
+     scrollable after a re-render, iOS Safari rebuilt layers and drew a blank screen. */
   min-height: calc(100% + 1px);
 }
 
@@ -242,38 +238,17 @@ a { color: var(--rain); }
 .hero-sum { font-size: 15px; color: var(--soft); }
 .stars.hero .moon { padding-top: 12px; border-top: 1px solid var(--divider); }
 
-/* 7 days */
+/* next 6 days */
 .glass { background: color-mix(in srgb, var(--card) 72%, transparent); }
-.week { gap: 4px; }
-.week-head {
-  display: flex; align-items: center; gap: 10px; width: 100%; height: 24px; line-height: 1;
-  border: 0; background: transparent; padding: 0; margin: 0; text-align: left;
-}
+.week { gap: 12px; }
+.week-head { display: flex; align-items: center; gap: 10px; height: 24px; line-height: 1; }
 .week-sum { flex: 1; text-align: right; font-size: 14px; font-weight: 500; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.week-head svg { flex: none; color: var(--muted); transition: transform .2s; }
-.week-rows { display: none; margin-top: 10px; }
-.week.open .week-rows { display: block; }
-.week-mini {
-  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; width: 100%;
-  margin: 12px 0 0; padding: 0; border: 0; background: transparent; text-align: center;
-}
-.week.open .week-mini { display: none; }
+.week-mini { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; text-align: center; }
 .week-mini .md { display: flex; flex-direction: column; align-items: center; gap: 5px; }
 .week-mini .t { font-size: 12px; color: var(--muted); }
 .week-mini .r { font-size: 11px; font-weight: 600; color: var(--rain); height: 14px; line-height: 14px; }
 .week-mini .h { font-size: 17px; font-weight: 600; }
 .week-mini .l { font-size: 14px; color: var(--muted); }
-.week.open .week-head svg { transform: rotate(180deg); }
-.day {
-  display: grid; grid-template-columns: 52px 30px 44px 34px 1fr 34px; align-items: center; gap: 8px;
-  height: 46px; border-top: 1px solid var(--divider);
-}
-.day .d { font-size: 16px; font-weight: 600; }
-.day .p { font-size: 13px; font-weight: 600; color: var(--rain); }
-.day .lo { font-size: 16px; color: var(--muted); text-align: right; }
-.day .hi { font-size: 16px; font-weight: 600; }
-.bar { height: 6px; border-radius: 3px; background: var(--track); position: relative; }
-.bar i { position: absolute; top: 0; bottom: 0; border-radius: 3px; background: var(--fill); }
 
 .empty { padding: 32px 16px; text-align: center; color: var(--muted); display: flex; flex-direction: column; gap: 12px; align-items: center; }
 .btn {

@@ -1,7 +1,7 @@
 {
   "name": "Simple Weather",
   "short_name": "Weather",
-  "description": "Current weather, rain, 7-day forecast and stargazing outlook.",
+  "description": "Current weather, rain, the next 6 days and stargazing outlook.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
