@@ -98,17 +98,21 @@ function paint({ size, scale }) {
     ctx.fillStyle = '#F2F5FB'; ctx.beginPath(); ctx.arc(x * S, y * S, r, 0, 7); ctx.fill();
   }
 
-  // Sun: wide warm halo, then a glowing disc with a soft edge.
-  const sx = S * 0.4, sy = S * 0.4, sr = S * 0.17;
+  // Moon: soft moonlight halo, then a glowing pale-gold crescent (lit on the left, like the in-app moon icon).
+  const sx = S * 0.37, sy = S * 0.35, sr = S * 0.2;
   ctx.save(); ctx.globalCompositeOperation = 'screen';
-  ctx.fillStyle = radial(sx, sy, sr * 3.2, [[0, 'rgba(255,205,140,.55)'], [0.35, 'rgba(255,170,100,.18)'], [1, 'rgba(255,170,100,0)']]);
+  ctx.fillStyle = radial(sx - sr * 0.45, sy + sr * 0.1, sr * 2.6, [[0, 'rgba(255,238,200,.38)'], [0.35, 'rgba(200,210,255,.12)'], [1, 'rgba(200,210,255,0)']]);
   ctx.fillRect(-S, -S, 3 * S, 3 * S); // oversized so the halo is not clipped when scaled down
   ctx.restore();
   const disc = layer(), d = disc.getContext('2d');
-  const dg = d.createRadialGradient(sx - sr * 0.3, sy - sr * 0.3, 0, sx, sy, sr);
-  dg.addColorStop(0, '#FFF3CF'); dg.addColorStop(0.55, '#FFD98A'); dg.addColorStop(1, '#FFC062');
+  const dg = d.createRadialGradient(sx - sr * 0.5, sy, 0, sx, sy, sr);
+  dg.addColorStop(0, '#FFF8E2'); dg.addColorStop(0.6, '#F7E6B4'); dg.addColorStop(1, '#E9CF8C');
   d.fillStyle = dg; d.beginPath(); d.arc(sx, sy, sr, 0, 7); d.fill();
-  ctx.save(); ctx.filter = 'blur(3px)'; ctx.drawImage(disc, 0, 0); ctx.restore();
+  d.globalCompositeOperation = 'destination-out';
+  d.beginPath(); d.arc(sx + sr * 0.48, sy - sr * 0.22, sr * 0.86, 0, 7); d.fill();
+  // a glow hugging the crescent itself
+  ctx.save(); ctx.filter = 'blur(18px)'; ctx.globalAlpha = 0.55; ctx.drawImage(disc, 0, 0); ctx.restore();
+  ctx.save(); ctx.filter = 'blur(2.5px)'; ctx.drawImage(disc, 0, 0); ctx.restore();
 
   // Cloud: soft shadow, then overlapping puffs lit from above.
   const cx = S * 0.55, cy = S * 0.63, k0 = 0.78; // k0 scales the cloud
@@ -127,10 +131,10 @@ function paint({ size, scale }) {
   const cg = c.createLinearGradient(0, cy - S * 0.33 * k0, 0, cy + S * 0.16 * k0);
   cg.addColorStop(0, '#FFFFFF'); cg.addColorStop(0.55, '#F1F5FA'); cg.addColorStop(1, '#C9D6E6');
   c.fillStyle = cg; shape(c);
-  // warm rim where the sun lights the cloud's upper left
+  // pale moonlit rim on the cloud's upper left
   c.globalCompositeOperation = 'source-atop';
   const rim = c.createRadialGradient(sx, sy, sr * 0.8, sx, sy, sr * 2.2);
-  rim.addColorStop(0, 'rgba(255,214,150,.55)'); rim.addColorStop(1, 'rgba(255,214,150,0)');
+  rim.addColorStop(0, 'rgba(255,236,190,.4)'); rim.addColorStop(1, 'rgba(255,236,190,0)');
   c.fillStyle = rim; c.fillRect(0, 0, S, S);
   ctx.save(); ctx.filter = 'blur(2px)'; ctx.drawImage(cl, 0, 0); ctx.restore();
   ctx.restore();
