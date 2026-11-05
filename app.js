@@ -206,10 +206,16 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
   </div>`;
     }).join('');
     const open = state.weekOpen;
+    // Collapsed: the next 6 days as small columns, like the Today card. Tap opens the full list.
+    const mini = m.days.slice(1, 7).map(d => `<span class="md">
+      <span class="t">${d.name}</span>${icon(d.icon, 24, 1.6)}
+      <span class="r">${d.pop >= 20 ? d.pop + '%' : ''}</span>
+      <span class="h">${deg(d.hi)}</span><span class="l">${deg(d.lo)}</span></span>`).join('');
     return `<section class="card glass week${open ? ' open' : ''}" aria-label="7-day forecast">
   <button type="button" class="week-head" data-act="week" aria-expanded="${open}">
     <span class="label">7 days</span><span class="week-sum">${esc(weekSummary(m))}</span>${icon('chevron', 16, 2)}
   </button>
+  <button type="button" class="week-mini" data-act="week" tabindex="-1" aria-hidden="true">${mini}</button>
   <div class="week-rows" role="list">${rows}</div>
 </section>`;
   }
