@@ -260,7 +260,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     return `<section class="card glass stars compact" aria-label="Stargazing">
   <div class="moon">
     <button type="button" class="moon-btn" data-act="moon" aria-haspopup="dialog" aria-label="${esc(moon.name)} moon, ${moon.pct}% lit">${moonIcon(moon.phase, moon.fraction, 34, moon.name + ' moon')}</button>
-    <div><span class="n">Stars ${esc(name)}</span>${verdictMeter(w.verdict, 'sm', clearOf(w))}<span class="s">${esc([w.when, ...L.slotMarks(w).map(k => MARKS[k].label)].join(' · '))}</span></div>
+    <div><span class="n">Stars ${esc(name)}</span>${verdictMeter(w.verdict, 'sm', clearOf(w))}<span class="s">${esc([w.when, ...L.slotMarks(w).map(k => MARKS[k].label)].join(' · '))}</span><span class="s moon-line"><button type="button" class="moon-name" data-act="moon" aria-haspopup="dialog">${esc(moon.name)}</button> · ${moon.pct}% lit</span></div>
     <button type="button" class="icon-btn" data-act="outlook" aria-label="Star outlook for the next 7 nights">${icon('outlook', 22, 1.6)}</button>
   </div>
 </section>`;

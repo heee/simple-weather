@@ -257,6 +257,7 @@ a { color: var(--rain); }
 
 .moon-btn { border: 0; background: transparent; padding: 0; margin: 0; display: flex; border-radius: 50%; }
 .stars.compact { padding: 12px 16px; }
+.moon-line .moon-name { font-size: 13px; font-weight: 500; color: var(--soft); }
 
 .stars.hero { background: var(--hero); border-radius: 12px; padding: 18px 16px; gap: 14px; }
 .hero-main { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
