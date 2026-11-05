@@ -103,6 +103,10 @@
 
   function headerHTML(place, idx, rec) {
     const title = place.name;
+    // The place's own clock, shown only when it differs from the phone's (all stars and moon times use it).
+    const tz = rec && rec.data && rec.data.timezone;
+    const now = Date.now();
+    const local = tz && L.time(now, tz, true) !== L.time(now, undefined, true) ? L.time(now, tz, true) : '';
     const loading = state.loading.has(place.id);
     let updated = '';
     if (rec) {
@@ -114,8 +118,8 @@
     const n = state.places.length;
     const dots = n > 1 ? `<div class="dots" role="img" aria-label="Place ${idx + 1} of ${n}">${state.places.map((_, i) => `<span class="${i === idx ? 'on' : ''}"></span>`).join('')}</div>` : '';
     return `<div class="header">${dots}
-  <button type="button" class="place-btn" data-act="places" aria-label="${esc(title)}${place.region ? ', ' + esc(place.region) : ''}. Manage places">
-    <span class="place-name">${esc(title)}${icon('chevron', 14, 2)}</span>
+  <button type="button" class="place-btn" data-act="places" aria-label="${esc(title)}${place.region ? ', ' + esc(place.region) : ''}${local ? ', local time ' + local : ''}. Manage places">
+    <span class="place-name"><span class="city">${esc(title)}</span>${icon('chevron', 14, 2)}</span>${local ? `<span class="place-time">${local} local time</span>` : ''}
   </button>
   <div class="updated">${updated}
     <button type="button" class="icon-btn${loading ? ' spinning' : ''}" data-act="refresh" aria-label="Refresh">${icon('refresh', 20, 1.8)}</button>
