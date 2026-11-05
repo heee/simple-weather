@@ -178,18 +178,21 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     return `<section class="card glass stars compact" aria-label="Stargazing">
   <div class="moon">
     <button type="button" class="moon-btn" data-act="moon" aria-haspopup="dialog" aria-label="${esc(moon.name)} moon, ${moon.pct}% lit">${moonIcon(moon.phase, moon.fraction, 34, moon.name + ' moon')}</button>
-    <div><span class="n">Stars ${esc(name)}</span><span class="n v-${w.verdict.cls}"> · ${esc(w.verdict.text)}</span><span class="s">${esc(w.when)}</span></div>
+    <div><span class="n">Stars ${esc(name)}</span>${verdictMeter(w.verdict, 'sm')}<span class="s">${esc([w.when, ...w.verdict.text.split(' · ').slice(1)].join(' · '))}</span></div>
     <button type="button" class="icon-btn" data-act="outlook" aria-label="Star outlook for the next 7 nights">${icon('outlook', 22, 1.6)}</button>
   </div>
 </section>`;
   }
 
   // Signal-style meter: 4 translucent bars (Great 4, Good 3, Fair 2, Poor none lit) beside the word.
-  function verdictMeter(v) {
+  // Used on the night card, the daytime stars card and the outlook. States without a rating
+  // ("Over", "No data", no window) show just the word.
+  function verdictMeter(v, cls = '') {
     const word = v.text.split(' · ')[0];
+    if (v.score < 0) return `<span class="verdict ${cls} v-${v.cls}">${esc(word)}</span>`;
     const lit = Math.max(0, Math.min(4, v.score));
     const bars = [0, 1, 2, 3].map(i => `<i class="${i < lit ? 'on' : ''}"></i>`).join('');
-    return `<span class="hero-verdict v-${v.cls}" role="img" aria-label="${esc(word)}, ${lit} of 4"><span class="meter" aria-hidden="true">${bars}</span><span aria-hidden="true">${esc(word)}</span></span>`;
+    return `<span class="verdict ${cls} v-${v.cls}" role="img" aria-label="${esc(word)}, ${lit} of 4"><span class="meter" aria-hidden="true">${bars}</span><span aria-hidden="true">${esc(word)}</span></span>`;
   }
 
   function starsHeroHTML(m) {
@@ -197,7 +200,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     return `<section class="card stars hero" aria-label="Stargazing">
   <div class="hero-main">
     <div class="hero-text"><span class="label">${h.title}</span><span class="hero-sum">${esc(h.summary)}</span></div>
-    ${verdictMeter(h.win.verdict)}
+    ${verdictMeter(h.win.verdict, 'hero-verdict')}
   </div>
   ${moonHTML(m.stars.moon, 40)}
 </section>`;
@@ -356,9 +359,9 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     const full = `${w.when}: ${w.verdict.text}${w.detail ? ', ' + w.detail : ''}`;
     let sub = '';
     if (!w.none && !w.past && !w.noData) sub = [`${w.cloud}%`, w.bright && w.verdict.score > 0 && 'moon', w.haze].filter(Boolean).join(' · ');
-    const word = w.none ? '—' : w.verdict.text.split(' · ')[0];
+    const v = w.none ? { text: '—', cls: 'poor', score: -1 } : w.verdict;
     return `<td class="cell${w.best ? ' best' : ''}" title="${esc(full)}">
-      <span class="n v-${w.verdict.cls}">${esc(word)}</span>${sub ? `<span class="s">${esc(sub)}</span>` : ''}</td>`;
+      ${verdictMeter(v, 'n sm')}${sub ? `<span class="s">${esc(sub)}</span>` : ''}</td>`;
   }
 
   // "Clearest", moon and haze notes for one night's hours.
@@ -542,7 +545,22 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
       // windows
       for (const [w, i] of [[n.evening, 2], [n.morning, 3]]) {
         const word = w.none ? '—' : w.verdict.text.split(' · ')[0];
-        c.fillStyle = SHARE_COLORS[w.verdict.cls] || '#9AA8BC'; c.font = font(600, 36); c.fillText(word, cols[i], y + 58);
+        const col = SHARE_COLORS[w.verdict.cls] || '#9AA8BC';
+        let tx = cols[i];
+        if (!w.none && w.verdict.score >= 0) {
+          // the same 4-bar meter as in the app: lit bars in the verdict colour at 50%, unlit faint
+          const lit = Math.min(4, w.verdict.score);
+          [12, 19, 26, 33].forEach((h, b) => {
+            c.globalAlpha = b < lit ? 0.5 : 1;
+            c.fillStyle = b < lit ? col : 'rgba(154,168,188,.14)';
+            c.beginPath();
+            if (c.roundRect) c.roundRect(tx + b * 13, y + 58 - h, 8, h, 3); else c.rect(tx + b * 13, y + 58 - h, 8, h);
+            c.fill();
+          });
+          c.globalAlpha = 1;
+          tx += 4 * 13 + 10;
+        }
+        c.fillStyle = col; c.font = font(600, 36); c.fillText(word, tx, y + 58);
         if (!w.none && !w.past && !w.noData) { c.fillStyle = '#9AA8BC'; c.font = font(500, 28); c.fillText(`${w.cloud}% cloud`, cols[i], y + 98); }
       }
     });
