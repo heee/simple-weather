@@ -6,6 +6,7 @@
   const TIMEOUT_MS = 8000;
   const REFETCH_AFTER = 15 * MIN;
   const STALE_AFTER = 3 * HOUR;
+  const SHOW_REFRESH_AFTER = 5 * MIN;
   const DEFAULT_PLACES = [{ id: '29.760,-95.370', name: 'Houston', region: 'TX', lat: 29.76, lon: -95.37 }];
 
   /* ---------- storage (every access guarded: private mode etc.) ---------- */
@@ -114,16 +115,18 @@
       const tag = age > STALE_AFTER ? (navigator.onLine === false ? ' · offline' : ' · stale') : '';
       if (tag) updated = `<span class="stale">Updated ${L.time(rec.fetchedAt, undefined, true)}${tag}</span>`;
     } else if (loading) updated = '<span>Loading…</span>';
-    // Page dots sit in the header row, centred between the place name and refresh (2+ places only).
+    // Refresh only when the data is over 5 minutes old, or while loading or after a failed refresh.
+    const showRefresh = !rec || loading || state.failed.has(place.id) || Date.now() - rec.fetchedAt > SHOW_REFRESH_AFTER;
+    // Page dots sit at the right of the header row, before refresh when it shows (2+ places only).
     const n = state.places.length;
     const dots = n > 1 ? `<div class="dots" role="img" aria-label="Place ${idx + 1} of ${n}">${state.places.map((_, i) => `<span class="${i === idx ? 'on' : ''}"></span>`).join('')}</div>` : '';
-    return `<div class="header">${dots}
+    return `<div class="header">
   <button type="button" class="place-btn" data-act="places" aria-label="${esc(title)}${place.region ? ', ' + esc(place.region) : ''}${local ? ', local time ' + local : ''}. Manage places">
     <span class="place-name"><span class="city">${esc(title)}</span>${icon('chevron', 14, 2)}</span>${local ? `<span class="place-time">${local}</span>` : ''}
-  </button>
-  <div class="updated">${updated}
-    <button type="button" class="icon-btn${loading ? ' spinning' : ''}" data-act="refresh" aria-label="Refresh">${icon('refresh', 20, 1.8)}</button>
-  </div>
+  </button>${dots}
+  ${updated || showRefresh ? `<div class="updated">${updated}${showRefresh ? `
+    <button type="button" class="icon-btn${loading ? ' spinning' : ''}" data-act="refresh" aria-label="Refresh">${icon('refresh', 20, 1.8)}</button>` : ''}
+  </div>` : ''}
 </div>
 ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’t refresh. Showing the saved forecast.</div>' : ''}`;
   }
@@ -852,7 +855,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then(reg => {
       // Home-screen apps often resume rather than relaunch; check for updates when brought back.
       document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') reg.update().catch(() => {});
+        if (reg && document.visibilityState === 'visible') reg.update().catch(() => {});
       });
     }).catch(() => {});
   }

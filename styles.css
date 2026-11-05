@@ -138,10 +138,9 @@ a { color: var(--rain); }
 
 /* ---- header ---- */
 
-.header { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; }
-.header > .place-btn { grid-column: 1; grid-row: 1; min-width: 0; max-width: 100%; }
-.header > .dots { grid-column: 2; grid-row: 1; }
-.header > .updated { grid-column: 3; grid-row: 1; justify-self: end; }
+.header { display: flex; align-items: center; gap: 10px; padding-right: 21px; } /* right edge = the cards' calendar icon */
+.header > .place-btn { flex: 1; min-width: 0; }
+.header > .updated { margin-right: -12px; } /* the refresh glyph's edge, not its 44px tap area, lines up */
 .place-btn {
   display: flex; flex-direction: column; justify-content: center; gap: 1px; align-items: flex-start;
   border: 0; background: transparent; padding: 0; margin: 0; text-align: left;
@@ -170,7 +169,7 @@ a { color: var(--rain); }
   /* Middle column of the header grid: centred by layout alone, no transforms, so no half-pixel blur. */
   display: flex; align-items: center; justify-content: center; gap: 6px; pointer-events: none;
 }
-.dots span { width: 8px; height: 8px; border-radius: 50%; background: var(--dot); } /* even size: centres on whole pixels in the 44px row */
+.dots span { width: 8px; height: 8px; border-radius: 50%; background: color-mix(in srgb, var(--text) 35%, transparent); } /* even size: centres on whole pixels in the 44px row */
 .dots span.on { background: var(--text); }
 
 /* ---- current ---- */
