@@ -777,7 +777,14 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
 
   let searchTimer = 0, searchSeq = 0;
   // While typing, the sheet shows only the search box and results, top-aligned above the keyboard.
-  const setSearching = () => sheet.classList.toggle('searching', search.value.trim().length > 0);
+  const vv = window.visualViewport;
+  function syncViewport() {
+    if (!vv) return;
+    sheet.style.setProperty('--vv-top', vv.offsetTop + 'px');
+    sheet.style.setProperty('--vv-h', vv.height + 'px');
+  }
+  if (vv) { vv.addEventListener('resize', syncViewport); vv.addEventListener('scroll', syncViewport); }
+  const setSearching = () => { syncViewport(); sheet.classList.toggle('searching', search.value.trim().length > 0); };
   search.addEventListener('input', () => {
     clearTimeout(searchTimer);
     setSearching();

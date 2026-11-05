@@ -292,7 +292,14 @@ a { color: var(--rain); }
 .sheet::backdrop { background: rgba(5, 10, 20, .25); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 .sheet[open] { display: flex; flex-direction: column; gap: 12px; animation: up .22s ease-out; }
 @keyframes up { from { transform: translateY(40px); opacity: 0; } }
-.sheet.searching { margin: max(8px, env(safe-area-inset-top)) auto auto; border-radius: 20px; padding-bottom: 12px; }
+/* While typing: pinned to the top of the *visible* area above the keyboard. iOS slides the
+   view up when the keyboard opens, so --vv-top / --vv-h follow window.visualViewport. */
+.sheet.searching {
+  top: calc(var(--vv-top, 0px) + max(8px, env(safe-area-inset-top))); bottom: auto; margin: 0 auto;
+  max-height: calc(var(--vv-h, 100dvh) - max(8px, env(safe-area-inset-top)) - 8px);
+  border-radius: 20px; padding-bottom: 12px;
+}
+.sheet.searching #places-results { min-height: 0; }
 .sheet.searching #places-list, .sheet.searching .units-row { display: none; }
 .sheet-tools { display: flex; gap: 2px; margin-right: -10px; }
 .sheet-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
