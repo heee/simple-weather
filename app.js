@@ -178,9 +178,8 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
   function starsHeroHTML(m) {
     const h = m.stars.hero;
     return `<section class="card stars hero" aria-label="Stargazing">
-  <div class="card-head"><span class="label">${h.title}</span>${icon('star', 22, 1.6, null, 'var(--star-icon)')}</div>
   <div class="hero-main">
-    <span class="hero-verdict v-${h.win.verdict.cls}">${esc(h.win.verdict.text)}</span>
+    <div class="card-head"><span class="label">${h.title}</span><span class="hero-verdict v-${h.win.verdict.cls}">${esc(h.win.verdict.text.split(' · ')[0])}</span></div>
     <span class="hero-sum">${esc(h.summary)}</span>
   </div>
   ${moonHTML(m.stars.moon, 40)}

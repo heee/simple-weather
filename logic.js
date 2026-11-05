@@ -350,7 +350,7 @@
           title: nowP.h >= 12 ? 'Stars tonight' : 'Stars now',
           win: w,
           other: w === tw ? pw : tw,
-          summary: w.noData ? 'Beyond the forecast' : `${w.sky} · ${w.cloud}% cloud · ${moonPhrase}`,
+          summary: w.noData ? 'Beyond the forecast' : `${w.cloud}% cloud · ${moonPhrase}`,
           dark: isNaN(darkEnd) ? '' : dark
         };
       }

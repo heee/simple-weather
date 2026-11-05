@@ -231,7 +231,8 @@ a { color: var(--rain); }
 
 .stars.hero { background: var(--hero); border: 1px solid var(--hero-border); border-radius: 22px; padding: 18px 16px; gap: 14px; }
 .hero-main { display: flex; flex-direction: column; gap: 4px; }
-.hero-verdict { font-size: 34px; font-weight: 600; line-height: 1.1; }
+.hero-verdict { font-size: 22px; font-weight: 700; line-height: 1.1; }
+.stars.hero .card-head { align-items: center; }
 .hero-sum { font-size: 15px; color: var(--soft); }
 .stars.hero .moon { padding-top: 12px; border-top: 1px solid var(--divider); }
 

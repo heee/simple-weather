@@ -104,7 +104,7 @@ check('5:42 am: hero is pre-dawn, "Stars now", moon has set, dark until nautical
   assert.strictEqual(h.title, 'Stars now');
   assert.strictEqual(h.win.kind, 'predawn');
   assert.strictEqual(h.win.verdict.text, 'Great');
-  assert.strictEqual(h.summary, 'Clear · 6% cloud · moon has set');
+  assert.strictEqual(h.summary, '6% cloud · moon has set');
   assert.ok(/^Dark sky until 6:[34][05] am$/.test(h.dark), h.dark);
   assert.strictEqual(h.other.kind, 'tonight');
   assert.ok(h.other.start > at('2026-10-22T10:42:00Z'), 'next tonight, not the one that passed');
