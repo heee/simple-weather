@@ -162,7 +162,7 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
     const times = [moon.rise && `Rises ${moon.rise}`, moon.set && `Sets ${moon.set}`].filter(Boolean).join(' · ');
     return `<div class="moon">${moonIcon(moon.phase, moon.fraction, size, moon.name + ' moon')}
     <div><button type="button" class="n moon-name" data-act="moon" aria-haspopup="dialog">${moon.name}</button><span class="n"> · ${moon.pct}% lit</span><span class="s">${times || 'No rise or set soon'}</span></div>
-    <button type="button" class="icon-btn" data-act="outlook" aria-label="Star outlook for the next 10 nights">${icon('outlook', 22, 1.6)}</button>
+    <button type="button" class="icon-btn" data-act="outlook" aria-label="Star outlook for the next 7 nights">${icon('outlook', 22, 1.6)}</button>
   </div>`;
   }
 
@@ -175,7 +175,7 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
   <div class="moon">
     <button type="button" class="moon-btn" data-act="moon" aria-haspopup="dialog" aria-label="${esc(moon.name)} moon, ${moon.pct}% lit">${moonIcon(moon.phase, moon.fraction, 34, moon.name + ' moon')}</button>
     <div><span class="n">Stars ${esc(name)}</span><span class="n v-${w.verdict.cls}"> · ${esc(w.verdict.text)}</span><span class="s">${esc(w.when)}</span></div>
-    <button type="button" class="icon-btn" data-act="outlook" aria-label="Star outlook for the next 10 nights">${icon('outlook', 22, 1.6)}</button>
+    <button type="button" class="icon-btn" data-act="outlook" aria-label="Star outlook for the next 7 nights">${icon('outlook', 22, 1.6)}</button>
   </div>
 </section>`;
   }

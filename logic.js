@@ -259,8 +259,8 @@
           (w.verdict.score === best.verdict.score && w.cloud < best.cloud)) best = w;
     }
 
-    // Outlook: evening and pre-dawn windows for the next 10 nights. Before sunrise the current night leads.
-    const OUTLOOK_NIGHTS = 10, SURE_NIGHTS = 7;
+    // Outlook: evening and pre-dawn windows for the next 7 nights. Before sunrise the current night leads.
+    const OUTLOOK_NIGHTS = 7, SURE_NIGHTS = 7;
     const slot = w => {
       if (!(w.end > w.start)) return { none: true, when: 'No dark window', verdict: VERDICTS.poor, detail: '' };
       const when = span(round5(w.start), round5(w.end), tz);

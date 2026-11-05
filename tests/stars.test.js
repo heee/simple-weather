@@ -142,14 +142,14 @@ check('new moon night: clear tonight is Great', () => {
   assert.strictEqual(m.stars.moon.name, 'New moon');
 });
 
-// ---- 10-night outlook ----
-check('outlook: 10 nights from tonight, last 3 low confidence, best on a sure night', () => {
+// ---- 7-night outlook ----
+check('outlook: 7 nights from tonight, all sure, one best', () => {
   const data = fixture(oct21, () => 6, undefined, 11);
   const o = run(data, '2026-10-21T20:00:00Z').stars.outlook; // 3 pm CDT
-  assert.strictEqual(o.length, 10);
+  assert.strictEqual(o.length, 7);
   assert.deepStrictEqual(o.slice(0, 3).map(n => n.name), ['Tonight', 'Thu', 'Fri']);
   assert.strictEqual(o[0].date, 'Oct 21');
-  assert.deepStrictEqual(o.map(n => n.far), [0, 0, 0, 0, 0, 0, 0, 1, 1, 1].map(Boolean));
+  assert.ok(o.every(n => !n.far));
   assert.strictEqual(o[0].evening.verdict.text, 'Fair · bright moon');
   assert.strictEqual(o[0].morning.verdict.text, 'Great');
   assert.ok(o.every(n => !n.evening.noData && !n.morning.noData), '11 days covers every night');
@@ -168,9 +168,9 @@ check('outlook: before sunrise the current night leads as "Now" with its evening
 });
 
 check('outlook: nights past the forecast say "No data"', () => {
-  const o = run(clear, '2026-10-21T20:00:00Z').stars.outlook; // only 8 days
-  assert.strictEqual(o[9].evening.verdict.text, 'No data');
-  assert.strictEqual(o[9].morning.detail, 'Beyond the forecast');
+  const o = run(fixture(oct21, () => 6, undefined, 5), '2026-10-21T20:00:00Z').stars.outlook; // only 5 days
+  assert.strictEqual(o[6].evening.verdict.text, 'No data');
+  assert.strictEqual(o[6].morning.detail, 'Beyond the forecast');
 });
 
 check('fog makes a window Poor; haze is only noted', () => {

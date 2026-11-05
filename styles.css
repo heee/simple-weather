@@ -281,6 +281,11 @@ a { color: var(--rain); }
 @keyframes up { from { transform: translateY(40px); opacity: 0; } }
 .sheet.searching { margin: max(8px, env(safe-area-inset-top)) auto auto; border-radius: 20px; padding-bottom: 12px; }
 .sheet.searching #places-list, .sheet.searching .units-row { display: none; }
+.sheet-close {
+  flex: none; width: 100%; min-height: 50px; border: 0; border-radius: 12px;
+  background: var(--card); color: var(--text); font-size: 16px; font-weight: 600;
+}
+.sheet-close:active { background: color-mix(in srgb, var(--card) 70%, var(--muted)); }
 .sheet-head { display: flex; justify-content: space-between; align-items: center; }
 .sheet h2 { margin: 0; font-size: 20px; font-weight: 600; }
 .place-list { list-style: none; margin: 0; padding: 0; background: var(--card); border-radius: 12px; overflow: auto; }
