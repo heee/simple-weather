@@ -343,6 +343,12 @@ ${state.places.length > 1 ? `<div class="dots" role="img" aria-label="Place ${id
         w.classList.toggle('open', state.weekOpen);
         w.querySelector('.week-head').setAttribute('aria-expanded', String(state.weekOpen));
       });
+      // Belt and braces for iOS Safari: a 1px scroll nudge makes it repaint the page.
+      if (page) requestAnimationFrame(() => {
+        const y = page.scrollTop;
+        page.scrollTop = y + 1;
+        requestAnimationFrame(() => { page.scrollTop = y; });
+      });
     }
     else if (act === 'outlook' && place) openOutlook(place);
     else if (act === 'moon' && place) openMoonInfo(place, btn);

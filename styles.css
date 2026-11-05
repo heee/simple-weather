@@ -101,7 +101,6 @@ a { color: var(--rain); }
   scroll-snap-align: start;
   scroll-snap-stop: always;
   isolation: isolate;
-  -webkit-overflow-scrolling: touch;
 }
 
 .content {
@@ -116,6 +115,9 @@ a { color: var(--rain); }
   display: flex;
   flex-direction: column;
   gap: 14px;
+  /* Always 1px taller than the page so it scrolls from the start. When expanding the 7-day
+     card first made the page scrollable, iOS Safari rebuilt layers and drew a blank screen. */
+  min-height: calc(100% + 1px);
 }
 
 .scenery {
@@ -129,7 +131,6 @@ a { color: var(--rain); }
   background: var(--sky-light) right top / cover no-repeat;
   -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent);
   mask-image: linear-gradient(to bottom, #000 40%, transparent);
-  will-change: opacity;
 }
 @media (prefers-color-scheme: dark) { .scenery { background-image: var(--sky-dark); } }
 /* Soft moon glow over clear and partly cloudy night skies while the moon is up. */
