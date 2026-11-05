@@ -53,7 +53,7 @@
     sunrise: '<path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 4v5M9.5 6.5L12 4l2.5 2.5M4.9 11.9l1.4 1.4M19.1 11.9l-1.4 1.4"/>',
     sunset: '<path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 9V4M9.5 6.5L12 9l2.5-2.5M4.9 11.9l1.4 1.4M19.1 11.9l-1.4 1.4"/>',
     close: '<path d="M6 6l12 12M18 6L6 18"/>',
-    outlook: '<rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M12 12.6l.85 1.8 1.85.85-1.85.85-.85 1.8-.85-1.8-1.85-.85 1.85-.85z"/>',
+    chevronRight: '<path d="M9 6l6 6-6 6"/>',
     trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'
   };
   function icon(name, size, sw, label, color) {
@@ -248,7 +248,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     const times = [moon.rise && `Rises ${moon.rise}`, moon.set && `Sets ${moon.set}`].filter(Boolean).join(' · ');
     return `<div class="moon">${moonIcon(moon.phase, moon.fraction, size, moon.name + ' moon')}
     <div><button type="button" class="n moon-name" data-act="moon" aria-haspopup="dialog">${moon.name}</button><span class="n"> · ${moon.pct}% lit</span><span class="s">${times || 'No rise or set soon'}</span></div>
-    <button type="button" class="icon-btn" data-act="outlook" aria-label="Star outlook for the next 7 nights">${icon('outlook', 22, 1.6)}</button>
+    ${icon('chevronRight', 16, 2, null, 'var(--muted)').replace('<svg ', '<svg class="more" ')}
   </div>`;
   }
 
@@ -257,11 +257,11 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     const s = m.stars, moon = s.moon;
     const w = s.best || (s.tonight.none ? s.predawn : s.tonight);
     const name = (w.name || 'Tonight').toLowerCase();
-    return `<section class="card glass stars compact" aria-label="Stargazing">
+    return `<section class="card glass stars compact" data-act="outlook" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Stargazing. Open the star outlook for the next 7 nights">
   <div class="moon">
     <button type="button" class="moon-btn" data-act="moon" aria-haspopup="dialog" aria-label="${esc(moon.name)} moon, ${moon.pct}% lit">${moonIcon(moon.phase, moon.fraction, 34, moon.name + ' moon')}</button>
     <div><span class="n">Stars ${esc(name)}</span>${verdictMeter(w.verdict, 'sm', clearOf(w))}<span class="s">${esc([w.when, ...L.slotMarks(w).map(k => MARKS[k].label)].join(' · '))}</span><span class="s moon-line"><button type="button" class="moon-name" data-act="moon" aria-haspopup="dialog">${esc(moon.name)}</button> · ${moon.pct}% lit</span></div>
-    <button type="button" class="icon-btn" data-act="outlook" aria-label="Star outlook for the next 7 nights">${icon('outlook', 22, 1.6)}</button>
+    ${icon('chevronRight', 16, 2, null, 'var(--muted)').replace('<svg ', '<svg class="more" ')}
   </div>
 </section>`;
   }
@@ -291,7 +291,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
 
   function starsHeroHTML(m) {
     const h = m.stars.hero;
-    return `<section class="card stars hero" aria-label="Stargazing">
+    return `<section class="card stars hero" data-act="outlook" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Stargazing. Open the star outlook for the next 7 nights">
   <div class="hero-main">
     <div class="hero-text"><span class="label">${h.title}</span><span class="hero-sum">${esc(h.summary)}</span></div>
     ${verdictMeter(h.win.verdict, 'hero-verdict', clearOf(h.win))}
@@ -449,7 +449,13 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
   });
 
   pager.addEventListener('keydown', e => {
-    if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.flip-inner')) { e.preventDefault(); toggleFlip(); }
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    if (e.target.matches('.flip-inner')) { e.preventDefault(); toggleFlip(); }
+    else if (e.target.matches('.stars[data-act=outlook]')) {
+      e.preventDefault();
+      const place = state.places.find(p => p.id === e.target.closest('.page').dataset.id);
+      if (place) openOutlook(place);
+    }
   });
 
   document.addEventListener('visibilitychange', () => {

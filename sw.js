@@ -1,6 +1,6 @@
 // App-shell cache. Forecast data lives in localStorage, so the API is never cached here.
 // Bump VERSION whenever a shell file changes.
-const VERSION = 'sw-v50';
+const VERSION = 'sw-v51';
 const SHELL = [
   './',
   'index.html',
