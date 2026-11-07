@@ -528,7 +528,18 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
 <p class="hsum">${esc(hoursSummary(hrs))}</p>`;
   }
 
+  // Legend items actually used in the table: the % note if any cell shows one, then each mark that appears.
+  function legendItems(nights) {
+    const slots = nights.flatMap(n => [n.evening, n.morning]);
+    const pct = slots.some(w => !w.none && !w.past && w.verdict.score >= 0 && clearOf(w) != null);
+    const used = new Set(slots.flatMap(w => L.slotMarks(w)));
+    return { pct, marks: ['moon', 'haze', 'rain'].filter(k => used.has(k)) };
+  }
+
   function outlookHTML(nights) {
+    const lg = legendItems(nights);
+    const legend = lg.pct || lg.marks.length
+      ? `<p class="outlook-legend">${lg.pct ? '% = clear sky' : ''}${lg.marks.map(k => `<span>${markIcon(k)} ${k === 'moon' ? 'bright moon' : k}</span>`).join('')}</p>` : '';
     let rows = '', farNoted = false;
     for (const n of nights) {
       if (n.far && !farNoted) {
@@ -549,7 +560,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     <th scope="col">Evening<span class="s">dark → 1 am</span></th><th scope="col">Morning<span class="s">4:30 → dawn</span></th></tr></thead>
   <tbody>${rows}</tbody>
 </table>
-<p class="outlook-legend">% = clear sky<span>${markIcon('moon')} bright moon</span><span>${markIcon('haze')} haze</span><span>${markIcon('rain')} rain</span></p>`;
+${legend}`;
   }
 
   function openOutlook(place) {
@@ -698,8 +709,9 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     // legend + footer
     c.fillStyle = '#9AA8BC'; c.font = font(500, 26); c.textAlign = 'left';
     let lx = x0 + 40; const ly = top + colH + rowH * nights.length + 52;
-    c.fillText('% = clear sky', lx, ly); lx += c.measureText('% = clear sky').width + 34;
-    for (const k of ['moon', 'haze', 'rain']) {
+    const lg = legendItems(nights);
+    if (lg.pct) { c.fillText('% = clear sky', lx, ly); lx += c.measureText('% = clear sky').width + 34; }
+    for (const k of lg.marks) {
       drawMark(c, k, lx, ly - 22, 24); lx += 32;
       c.fillStyle = '#9AA8BC'; c.fillText(MARKS[k].label, lx, ly); lx += c.measureText(MARKS[k].label).width + 30;
     }
