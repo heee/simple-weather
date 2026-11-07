@@ -557,7 +557,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     }
     return `<table class="outlook-table">
   <thead><tr><th scope="col">Night</th><th scope="col">Moon</th>
-    <th scope="col">Evening<span class="s">dark → 1 am</span></th><th scope="col">Morning<span class="s">4:30 → dawn</span></th></tr></thead>
+    <th scope="col">Evening</th><th scope="col">Pre-dawn</th></tr></thead>
   <tbody>${rows}</tbody>
 </table>
 ${legend}`;
@@ -615,7 +615,7 @@ ${legend}`;
 
   async function drawOutlookImage(place, m) {
     const nights = m.stars.outlook;
-    const W = 1080, pad = 56, headH = 150, colH = 104, rowH = 128, footH = 150;
+    const W = 1080, pad = 56, headH = 150, colH = 84, rowH = 128, footH = 150;
     const H = pad + headH + colH + rowH * nights.length + footH;
     const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
     const c = cv.getContext('2d');
@@ -649,9 +649,9 @@ ${legend}`;
     const cols = [x0 + 40, x0 + cw * 0.31, x0 + cw * 0.5, x0 + cw * 0.75];
     const colW = cw * 0.25;
     c.textAlign = 'left';
-    const heads = [['NIGHT'], ['MOON'], ['EVENING', 'dark → 1 am'], ['MORNING', '4:30 → dawn']];
+    const heads = [['NIGHT'], ['MOON'], ['EVENING'], ['PRE-DAWN']];
     heads.forEach(([h, s], i) => {
-      c.fillStyle = '#9AA8BC'; c.font = font(600, 26); c.fillText(h, cols[i], top + (s ? 46 : 62));
+      c.fillStyle = '#9AA8BC'; c.font = font(600, 26); c.fillText(h, cols[i], top + 52);
       if (s) { c.font = font(500, 26); c.fillText(s, cols[i], top + 82); }
     });
 
