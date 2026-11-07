@@ -74,18 +74,29 @@ function paint({ size, scale }) {
   ctx.translate(S / 2, S / 2); ctx.scale(scale, scale); ctx.translate(-S / 2, -S / 2);
   const big = 3 * S; // oversized fills so glows are never clipped when scaled down
 
-  // Soft moonlight around the crescent.
-  const mx = S * 0.46, my = S * 0.54, mr = S * 0.25;
-  ctx.fillStyle = radial(mx - mr * 0.3, my, S * 0.5, [[0, 'rgba(255,236,200,.14)'], [1, 'rgba(255,236,200,0)']]);
-  ctx.fillRect(-S, -S, big, big);
+  // Pale-gold crescent, lit on the left like the in-app moon icon. It is drawn once, then its visible
+  // outline is measured and the crescent shifted so that outline sits in the centre of the icon.
+  const mr = S * 0.25;
+  const crescent = (mx, my) => {
+    const disc = layer(), d = disc.getContext('2d');
+    const dg = d.createRadialGradient(mx - mr * 0.5, my, 0, mx, my, mr);
+    dg.addColorStop(0, '#FFF8E2'); dg.addColorStop(0.6, '#F7E6B4'); dg.addColorStop(1, '#E9CF8C');
+    d.fillStyle = dg; d.beginPath(); d.arc(mx, my, mr, 0, 7); d.fill();
+    d.globalCompositeOperation = 'destination-out';
+    d.beginPath(); d.arc(mx + mr * 0.42, my - mr * 0.2, mr * 0.86, 0, 7); d.fill();
+    return disc;
+  };
+  const probe = crescent(S / 2, S / 2).getContext('2d').getImageData(0, 0, S, S).data;
+  let x0 = S, x1 = 0, y0 = S, y1 = 0;
+  for (let yy = 0; yy < S; yy++) for (let xx = 0; xx < S; xx++) {
+    if (probe[(yy * S + xx) * 4 + 3] > 127) { if (xx < x0) x0 = xx; if (xx > x1) x1 = xx; if (yy < y0) y0 = yy; if (yy > y1) y1 = yy; }
+  }
+  const mx = S / 2 + (S / 2 - (x0 + x1) / 2), my = S / 2 + (S / 2 - (y0 + y1) / 2);
+  const disc = crescent(mx, my);
 
-  // Pale-gold crescent, lit on the left like the in-app moon icon, with a glow hugging it.
-  const disc = layer(), d = disc.getContext('2d');
-  const dg = d.createRadialGradient(mx - mr * 0.5, my, 0, mx, my, mr);
-  dg.addColorStop(0, '#FFF8E2'); dg.addColorStop(0.6, '#F7E6B4'); dg.addColorStop(1, '#E9CF8C');
-  d.fillStyle = dg; d.beginPath(); d.arc(mx, my, mr, 0, 7); d.fill();
-  d.globalCompositeOperation = 'destination-out';
-  d.beginPath(); d.arc(mx + mr * 0.42, my - mr * 0.2, mr * 0.86, 0, 7); d.fill();
+  // Soft moonlight around the crescent, then the crescent with a glow hugging it.
+  ctx.fillStyle = radial(S / 2, S / 2, S * 0.5, [[0, 'rgba(255,236,200,.14)'], [1, 'rgba(255,236,200,0)']]);
+  ctx.fillRect(-S, -S, big, big);
   ctx.save(); ctx.filter = 'blur(22px)'; ctx.globalAlpha = 0.5; ctx.drawImage(disc, 0, 0); ctx.restore();
   ctx.save(); ctx.filter = 'blur(2px)'; ctx.drawImage(disc, 0, 0); ctx.restore();
 
