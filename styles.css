@@ -59,6 +59,10 @@
 }
 
 * { box-sizing: border-box; }
+/* No focus ring after taps; a soft rounded one for keyboard navigation only. */
+:focus:not(:focus-visible) { outline: none; }
+:focus-visible { outline: 2px solid color-mix(in srgb, var(--text) 45%, transparent); outline-offset: 2px; }
+.card:focus-visible, .flip-inner:focus-visible { border-radius: 12px; }
 :root { --divider-fade: linear-gradient(90deg, transparent, var(--divider) 14%, var(--divider) 86%, transparent); }
 
 html, body {

@@ -448,6 +448,17 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     else if (act === 'moon' && place) openMoonInfo(place, btn);
   });
 
+  // When a sheet or pop-up opened by a tap closes, the browser returns focus to the card that opened it
+  // and iOS Safari draws a focus ring around it. Drop that focus unless the user is using a keyboard.
+  let usingKeyboard = false;
+  document.addEventListener('keydown', () => { usingKeyboard = true; }, true);
+  document.addEventListener('pointerdown', () => { usingKeyboard = false; }, true);
+  for (const id of ['outlook', 'moon-info', 'places']) {
+    document.getElementById(id).addEventListener('close', () => {
+      setTimeout(() => { if (!usingKeyboard && document.activeElement && document.activeElement !== document.body) document.activeElement.blur(); }, 0);
+    });
+  }
+
   pager.addEventListener('keydown', e => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
     if (e.target.matches('.flip-inner')) { e.preventDefault(); toggleFlip(); }
