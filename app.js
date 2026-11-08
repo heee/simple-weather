@@ -803,7 +803,7 @@ ${legend}`;
     if (!info) return;
     const age = moon.phase * 29.53;
     moonSheet.innerHTML = `<div class="pop-head">
-    ${moonIcon(moon.phase, moon.fraction, 56, moon.name + ' moon')}
+    ${moonIcon(moon.phase, moon.fraction, 48, moon.name + ' moon')}
     <div><h2 id="moon-info-title">${esc(moon.name)}</h2><span class="s">Lunar phase · day ${Math.round(age)} of 29.5</span></div>
     <button type="button" class="icon-btn" data-close aria-label="Close">${icon('close', 20, 1.8)}</button>
   </div>
@@ -812,11 +812,7 @@ ${legend}`;
   <p>${info.sky}</p>
   <a href="${WIKI}${info.wiki}" target="_blank" rel="noopener">Read more on Wikipedia →</a>`;
     if (typeof moonSheet.showModal === 'function') moonSheet.showModal(); else moonSheet.setAttribute('open', '');
-    // Anchor the card just below the tapped name, like a link preview, keeping it on screen.
-    const r = (anchor.closest('.moon') || anchor).getBoundingClientRect();
-    const h = moonSheet.offsetHeight, vh = window.innerHeight;
-    const top = r.bottom + 8 + h <= vh - 12 ? r.bottom + 8 : Math.max(12, r.top - 8 - h);
-    moonSheet.style.top = Math.max(12, Math.min(top, vh - h - 12)) + 'px';
+    // Centred on screen by CSS.
   }
   function closeMoonInfo() { if (moonSheet.open) moonSheet.close ? moonSheet.close() : moonSheet.removeAttribute('open'); }
   moonSheet.addEventListener('click', e => { if (e.target === moonSheet || e.target.closest('[data-close]')) closeMoonInfo(); });
