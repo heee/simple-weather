@@ -424,6 +424,19 @@ a { color: var(--rain); }
 .pop .s { font-size: 13px; color: var(--muted); }
 .pop p { margin: 10px 0 0; font-size: 15px; line-height: 1.6; color: var(--soft); }
 .pop .pop-head + p { margin-top: 16px; }
+.pop .orbit { margin: 14px -4px 0; }
+/* Light mode: a darker unlit side in the pop-up so the phase shape reads clearly. */
+@media (prefers-color-scheme: light) { .pop { --moon-dark: #7F8CA3; } }
+.pop .orbit svg { display: block; width: 100%; height: auto; }
+.orbit .ray { stroke: var(--star-icon); stroke-width: 1.4; stroke-dasharray: 3 4; opacity: .55; }
+.orbit .track { fill: none; stroke: var(--divider); stroke-dasharray: 2 4; stroke-width: 1.2; }
+.orbit .today { fill: none; stroke: var(--good); stroke-width: 1.2; opacity: .75; }
+.orbit .olbl { font: 500 11px Manrope, -apple-system, sans-serif; fill: var(--muted); }
+.orbit .oday { font: 600 12px Manrope, -apple-system, sans-serif; fill: var(--soft); }
+.pop p.next-phases { display: flex; justify-content: space-between; gap: 10px; margin: 8px 0 6px; font-size: 13px; line-height: 1.4; color: var(--muted); }
+.next-phases span { display: flex; flex-direction: column; }
+.next-phases span:last-child { text-align: right; }
+.next-phases b { color: var(--text); font-weight: 600; }
 .pop p b { color: var(--text); }
 .pop a { display: inline-block; margin-top: 20px; font-size: 14px; font-weight: 600; text-decoration: none; }
 

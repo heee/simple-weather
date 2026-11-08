@@ -450,5 +450,32 @@
     return `${head}\nNo good windows in the next ${outlook.length} nights.`;
   }
 
-  root.SWLogic = { slotMarks, shareText, placeQueries, placeMatches, rankPlaces, build, parts, time, span, group, label, iconName, compass, phaseName, verdict, cloudClass, hazeClass, moonEvents };
+  // Next new and full moon after `now`: hourly scan of SunCalc's phase (0 new, 0.5 full), refined to the minute.
+  // Dates and "in N days" are counted in the place's own time zone.
+  function nextPhases(now, tz) {
+    const ph = t => SunCalc.getMoonIllumination(new Date(t)).phase;
+    const crosses = (a, b, target) => target === 0 ? a > 0.75 && b < 0.25 : a < target && b >= target;
+    const find = target => {
+      let t = now, a = ph(t);
+      for (let i = 0; i < 24 * 31; i++) {
+        const u = t + HOUR, b = ph(u);
+        if (crosses(a, b, target)) {
+          let lo = t, hi = u;
+          while (hi - lo > MIN) { const mid = (lo + hi) / 2; if (crosses(ph(lo), ph(mid), target)) hi = mid; else lo = mid; }
+          return hi;
+        }
+        t = u; a = b;
+      }
+      return null;
+    };
+    const dayNo = ms => { const [y, mo, d] = parts(ms, tz).date.split('-').map(Number); return Date.UTC(y, mo - 1, d) / 864e5; };
+    const describe = ms => {
+      if (ms == null) return null;
+      const n = Math.round(dayNo(ms) - dayNo(now));
+      return { ms, date: monthDay(ms, tz), days: n, when: n === 0 ? 'today' : n === 1 ? 'tomorrow' : `in ${n} days` };
+    };
+    return { newMoon: describe(find(0)), fullMoon: describe(find(0.5)) };
+  }
+
+  root.SWLogic = { nextPhases, slotMarks, shareText, placeQueries, placeMatches, rankPlaces, build, parts, time, span, group, label, iconName, compass, phaseName, verdict, cloudClass, hazeClass, moonEvents };
 })(typeof window !== 'undefined' ? window : globalThis);

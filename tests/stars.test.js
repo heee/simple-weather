@@ -236,6 +236,18 @@ check('today card: sunrise and sunset in the place\'s time zone', () => {
   assert.ok(/^6:4\d pm$/.test(t.sunset), t.sunset);
 });
 
+// The app shows dates only. SunCalc's phase is approximate (to a few hours), so times get a tolerance.
+check('next new and full moon: Nov 9 and Nov 24, 2026, with "in N days" counted in local days', () => {
+  const n = L.nextPhases(at('2026-11-05T15:00:00Z'), TZ); // Nov 5, 9 am CST
+  assert.strictEqual(n.newMoon.date, 'Nov 9'); assert.strictEqual(n.newMoon.when, 'in 4 days');
+  assert.ok(Math.abs(n.newMoon.ms - at('2026-11-09T07:02:00Z')) < 30 * 60000, new Date(n.newMoon.ms).toISOString());
+  assert.strictEqual(n.fullMoon.date, 'Nov 24'); assert.strictEqual(n.fullMoon.when, 'in 19 days');
+  assert.ok(Math.abs(n.fullMoon.ms - at('2026-11-24T15:00:00Z')) < 4 * 3600000, new Date(n.fullMoon.ms).toISOString());
+  const later = L.nextPhases(at('2026-11-23T15:00:00Z'), TZ); // day before full
+  assert.strictEqual(later.fullMoon.when, 'tomorrow');
+  assert.strictEqual(later.newMoon.date, 'Dec 8'); // next cycle
+});
+
 // ---- share text ----
 check('share text: next Great window, else best, else none', () => {
   const w = (kind, score, text, extra = {}) => ({ kind, start: at('2026-10-24T10:00:00Z'), when: kind === 'tonight' ? '7:05 pm – 1 am' : '4:30 – 6:10 am', cloud: 5, verdict: { score, text }, ...extra });

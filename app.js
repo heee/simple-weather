@@ -807,13 +807,58 @@ ${legend}`;
     <div><h2 id="moon-info-title">${esc(moon.name)}</h2><span class="s">Lunar phase · day ${Math.round(age)} of 29.5</span></div>
     <button type="button" class="icon-btn" data-close aria-label="Close">${icon('close', 20, 1.8)}</button>
   </div>
+  <div class="orbit">${orbitSVG()}</div>
+  ${(() => { const n = L.nextPhases(Date.now(), m.tz); const f = (lbl, x) => x ? `<span><b>${lbl}</b> ${x.date} · ${x.when}</span>` : '';
+    return `<p class="next-phases">${f('New moon', n.newMoon)}${f('Full moon', n.fullMoon)}</p>`; })()}
   <p>${info.body}</p>
   <h3>For stargazing</h3>
   <p>${info.sky}</p>
   <a href="${WIKI}${info.wiki}" target="_blank" rel="noopener">Read more on Wikipedia →</a>`;
     if (typeof moonSheet.showModal === 'function') moonSheet.showModal(); else moonSheet.setAttribute('open', '');
     // Centred on screen by CSS.
+    animateOrbit(moonSheet.querySelector('.orbit svg'), moon.phase);
   }
+  // Orbit diagram: Sun on the left, Earth in the middle, the Moon on its orbit with its sunlit half facing
+  // the Sun; the inset shows the Moon as seen from Earth. Angle: new moon toward the Sun (left), full away.
+  const ORBIT = { cx: 150, cy: 96, R: 60 };
+  function orbitSVG() {
+    const { cx, cy, R } = ORBIT;
+    const rays = [0, 1, 2, 3].map(i => `<line x1="34" x2="54" y1="${cy - 36 + i * 24}" y2="${cy - 36 + i * 24}" class="ray"/>`).join('');
+    return `<svg viewBox="0 0 300 186" role="img" aria-label="Diagram: the Moon orbiting Earth, lit by the Sun from the left">
+    <defs><radialGradient id="sunG"><stop offset="0" stop-color="#FFE6AE" stop-opacity=".9"/><stop offset="1" stop-color="#FFE6AE" stop-opacity="0"/></radialGradient></defs>
+    <circle cx="-12" cy="${cy}" r="70" fill="url(#sunG)"/>${rays}
+    <text x="4" y="14" class="olbl">Sunlight →</text>
+    <circle cx="${cx}" cy="${cy}" r="${R}" class="track"/>
+    <circle cx="${cx}" cy="${cy}" r="11" fill="#1F4F86"/><path d="M${cx} ${cy - 11}A11 11 0 0 0 ${cx} ${cy + 11}z" fill="#4F8FD6"/>
+    <text x="${cx}" y="${cy + 26}" class="olbl" text-anchor="middle">Earth</text>
+    <circle r="11" class="today"/><g class="omoon"></g>
+    <text x="296" y="14" class="olbl" text-anchor="end">From Earth</text>
+    <g class="inset" transform="translate(252 20) scale(1.1)"></g>
+    <text x="296" y="78" class="oday" text-anchor="end"></text></svg>`;
+  }
+  function animateOrbit(svg, today) {
+    if (!svg) return;
+    const { cx, cy, R } = ORBIT, pos = p => { const a = Math.PI + 2 * Math.PI * p; return [cx + R * Math.cos(a), cy - R * Math.sin(a)]; };
+    const [tx, ty] = pos(today);
+    svg.querySelector('.today').setAttribute('cx', tx.toFixed(1)); svg.querySelector('.today').setAttribute('cy', ty.toFixed(1));
+    const moon = svg.querySelector('.omoon'), inset = svg.querySelector('.inset'), day = svg.querySelector('.oday');
+    const draw = p => {
+      const [x, y] = pos(p);
+      moon.innerHTML = `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="8" style="fill:var(--moon-dark)"/><path d="M${x.toFixed(1)} ${(y - 8).toFixed(1)}A8 8 0 0 0 ${x.toFixed(1)} ${(y + 8).toFixed(1)}z" style="fill:var(--moon-lit)"/>`;
+      const d = moonLitPath(p, (1 - Math.cos(2 * Math.PI * p)) / 2);
+      inset.innerHTML = `<circle cx="20" cy="20" r="18" style="fill:var(--moon-dark)"/>` + (d === 'full' ? `<circle cx="20" cy="20" r="18" style="fill:var(--moon-lit)"/>` : d ? `<path d="${d}" style="fill:var(--moon-lit)"/>` : '');
+      day.textContent = 'Day ' + Math.max(1, Math.round(p * 29.53));
+    };
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) { draw(today); return; }
+    const t0 = performance.now(), dur = 1600, ease = t => 1 - Math.pow(1 - t, 3);
+    const step = now => {
+      if (!svg.isConnected) return;
+      const t = Math.min(1, (now - t0) / dur); draw(ease(t) * today);
+      if (t < 1) requestAnimationFrame(step);
+    };
+    draw(0); requestAnimationFrame(step);
+  }
+
   function closeMoonInfo() { if (moonSheet.open) moonSheet.close ? moonSheet.close() : moonSheet.removeAttribute('open'); }
   moonSheet.addEventListener('click', e => { if (e.target === moonSheet || e.target.closest('[data-close]')) closeMoonInfo(); });
 
