@@ -25,6 +25,7 @@
   --fair-bg: #FBE9DA;
   --poor: #556676;
   --star-icon: #C98A12;
+  --now: #2B8FE0;
   --moon-lit: #F1E4BE;
   --moon-dark: #C9D3DD;
   --danger: #B3261E;
@@ -51,6 +52,7 @@
     --fair-bg: rgba(242, 179, 107, .14);
     --poor: #9AA8BC;
     --star-icon: #F2C46D;
+    --now: #8CC8FF;
     --moon-lit: #F1E4BE;
     --moon-dark: #2A3550;
               --danger: #FF8A80;
@@ -221,10 +223,12 @@ a { color: var(--rain); }
 .curve .sunlbl { font: 500 12px Manrope, -apple-system, sans-serif; fill: var(--soft); }
 .curve .hilo { font: 600 13px Manrope, -apple-system, sans-serif; fill: var(--text); }
 .curve .hilo.lo { fill: var(--muted); font-weight: 500; }
-.curve .nowdot { fill: var(--text); stroke: var(--bg); stroke-width: 2; }
+.curve .nowdot { fill: var(--now); stroke: var(--bg); stroke-width: 2; }
 .curve .sundot { fill: var(--star-icon); }
 .curve .hilo.sunT { fill: var(--soft); font-weight: 500; }
-.curve .hilo.nowlbl { fill: var(--text); font-weight: 700; }
+.curve .hilo.nowlbl { fill: var(--now); font-weight: 700; }
+/* Sun in weather icons: the same amber as the sunrise/sunset markers. */
+.sun-part { stroke: var(--star-icon); }
 .curve-empty { margin: 0; font-size: 13px; color: var(--muted); }
 .snaps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; text-align: center; }
 .snap { display: flex; flex-direction: column; align-items: center; gap: 6px; }

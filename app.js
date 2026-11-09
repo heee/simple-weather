@@ -36,9 +36,9 @@
   const CLOUD_HI = '<path d="M7 15h10a4 4 0 0 0 .5-7.97A6 6 0 0 0 6.1 6.5 4.25 4.25 0 0 0 7 15z"/>';
   const PARTLY_CLOUD = '<path d="M9 20h8.5a3.5 3.5 0 0 0 .4-6.98A5 5 0 0 0 8.3 12.2 3.9 3.9 0 0 0 9 20z"/>';
   const PATHS = {
-    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    sun: '<g class="sun-part"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g>',
     moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
-    partly: '<path d="M8 3v1.5M3.5 8H2M4.3 4.3l1 1M12.7 4.3l-1 1"/><path d="M5.5 10.5A3.5 3.5 0 0 1 11.6 7"/>' + PARTLY_CLOUD,
+    partly: '<g class="sun-part"><path d="M8 3v1.5M3.5 8H2M4.3 4.3l1 1M12.7 4.3l-1 1"/><path d="M5.5 10.5A3.5 3.5 0 0 1 11.6 7"/></g>' + PARTLY_CLOUD,
     partlyNight: '<path d="M11.4 8.2A4.6 4.6 0 0 1 5.4 2.6 4.6 4.6 0 1 0 11.4 8.2z"/>' + PARTLY_CLOUD,
     cloudy: '<path d="M7 18h10a4 4 0 0 0 .5-7.97A6 6 0 0 0 6.1 9.5 4.25 4.25 0 0 0 7 18z"/>',
     fog: '<path d="M7 13h10a4 4 0 0 0 .5-7.97A6 6 0 0 0 6.1 4.5 4.25 4.25 0 0 0 7 13z"/><path d="M4 17h16M7 20.5h10"/>',
