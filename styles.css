@@ -25,7 +25,7 @@
   --fair-bg: #FBE9DA;
   --poor: #556676;
   --star-icon: #C98A12;
-  --now: #2B8FE0;
+  --now: #10202E;
   --moon-lit: #F1E4BE;
   --moon-dark: #C9D3DD;
   --danger: #B3261E;
@@ -52,7 +52,7 @@
     --fair-bg: rgba(242, 179, 107, .14);
     --poor: #9AA8BC;
     --star-icon: #F2C46D;
-    --now: #8CC8FF;
+    --now: #FFFFFF;
     --moon-lit: #F1E4BE;
     --moon-dark: #2A3550;
               --danger: #FF8A80;
@@ -223,7 +223,12 @@ a { color: var(--rain); }
 .curve .sunlbl { font: 500 12px Manrope, -apple-system, sans-serif; fill: var(--soft); }
 .curve .hilo { font: 600 13px Manrope, -apple-system, sans-serif; fill: var(--text); }
 .curve .hilo.lo { fill: var(--muted); font-weight: 500; }
-.curve .nowdot { fill: var(--now); stroke: var(--bg); stroke-width: 2; }
+.curve .nowdot { fill: var(--now); stroke: var(--bg); stroke-width: 1.5; }
+/* A soft halo that breathes slowly around the current time; still under Reduce Motion. */
+.curve .nowglow { fill: var(--now); opacity: .22; transform-box: fill-box; transform-origin: center; animation: nowpulse 2.4s ease-in-out infinite; }
+@keyframes nowpulse { 0%, 100% { transform: scale(.7); opacity: .3; } 50% { transform: scale(1.35); opacity: .08; } }
+/* Raindrops in the same blue as the rain percentages. */
+.rain-part { stroke: var(--rain); }
 .curve .sundot { fill: var(--star-icon); }
 .curve .hilo.sunT { fill: var(--soft); font-weight: 500; }
 .curve .hilo.nowlbl { fill: var(--now); font-weight: 700; }
@@ -449,6 +454,7 @@ a { color: var(--rain); }
 .pop a { display: inline-block; margin-top: 20px; font-size: 14px; font-weight: 600; text-decoration: none; }
 
 @media (prefers-reduced-motion: reduce) {
+  .curve .nowglow { animation: none; }
   .flip-inner { transition: none; }
   .pop[open] { animation: none; }
   .sheet[open] { animation: none; }

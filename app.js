@@ -42,7 +42,7 @@
     partlyNight: '<path d="M11.4 8.2A4.6 4.6 0 0 1 5.4 2.6 4.6 4.6 0 1 0 11.4 8.2z"/>' + PARTLY_CLOUD,
     cloudy: '<path d="M7 18h10a4 4 0 0 0 .5-7.97A6 6 0 0 0 6.1 9.5 4.25 4.25 0 0 0 7 18z"/>',
     fog: '<path d="M7 13h10a4 4 0 0 0 .5-7.97A6 6 0 0 0 6.1 4.5 4.25 4.25 0 0 0 7 13z"/><path d="M4 17h16M7 20.5h10"/>',
-    rain: CLOUD_HI + '<path d="M9 18l-1 3M13 18l-1 3M17 18l-1 3"/>',
+    rain: CLOUD_HI + '<path class="rain-part" d="M9 18l-1 3M13 18l-1 3M17 18l-1 3"/>',
     thunder: CLOUD_HI + '<path d="M12.5 15.5l-2 3h3l-2 3"/>',
     snow: CLOUD_HI + '<path d="M8.5 18.5h.01M12.5 18.5h.01M16.5 18.5h.01M10.5 21.5h.01M14.5 21.5h.01" stroke-width="2.4"/>',
     thermo: '<path d="M14 14.8V5a2 2 0 1 0-4 0v9.8a4 4 0 1 0 4 0z"/>',
@@ -231,7 +231,8 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
 
     const sunDots = [[t.sunriseH, srT], [t.sunsetH, ssT]].filter(([h, v]) => h != null && v != null)
       .map(([h, v]) => `<circle cx="${x(h).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" class="sundot"/>`).join('');
-    const now = nt == null ? '' : `<circle cx="${x(t.nowH).toFixed(1)}" cy="${y(nt).toFixed(1)}" r="4" class="nowdot"/>`;
+    const nx = x(t.nowH).toFixed(1), ny = nt == null ? 0 : y(nt).toFixed(1);
+    const now = nt == null ? '' : `<circle cx="${nx}" cy="${ny}" r="9" class="nowglow"/><circle cx="${nx}" cy="${ny}" r="4.5" class="nowdot"/>`;
     const sr = t.sunrise ? `Sunrise ${t.sunrise}${srT != null ? ', ' + deg(srT) : ''}. ` : '';
     const ss = t.sunset ? `Sunset ${t.sunset}${ssT != null ? ', ' + deg(ssT) : ''}. ` : '';
     const nw = nt != null ? `Now ${deg(nt)}. ` : '';
