@@ -479,6 +479,21 @@ a { color: var(--rain); }
 .pop .s { font-size: 13px; color: var(--muted); }
 .pop p { margin: 10px 0 0; font-size: 15px; line-height: 1.6; color: var(--soft); }
 .pop .pop-head + p { margin-top: 16px; }
+.pop:focus { outline: none; }
+.pop-a, .pop-b { display: contents; } /* columns only when the phone is sideways */
+.pop-b > p:first-child { margin-top: 10px; }
+@media (orientation: landscape) and (max-height: 500px) {
+  .pop { width: calc(100% - 96px); max-width: 720px; max-height: calc(100dvh - 24px); padding: 18px 22px 20px;
+    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); column-gap: 26px; align-items: start; }
+  .pop[open] { display: grid; }
+  .pop-a, .pop-b { display: block; min-width: 0; }
+  .pop .orbit { margin-top: 8px; }
+  .pop .orbit svg { max-height: 160px; }
+  .pop-b > p:first-child { margin-top: 0; }
+  .pop p { font-size: 14px; line-height: 1.5; }
+  .pop h3 { margin-top: 14px; }
+  .pop a { margin-top: 14px; }
+}
 .pop .orbit { margin: 14px -4px 0; }
 /* Light mode: a darker unlit side in the pop-up so the phase shape reads clearly. */
 @media (prefers-color-scheme: light) { .pop { --moon-dark: #7F8CA3; } }

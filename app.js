@@ -863,19 +863,22 @@ ${legend}`;
     const moon = m.stars.moon, info = PHASE_INFO[moon.name];
     if (!info) return;
     const age = moon.phase * 29.53;
-    moonSheet.innerHTML = `<div class="pop-head">
+    moonSheet.innerHTML = `<div class="pop-a"><div class="pop-head">
     ${moonIcon(moon.phase, moon.fraction, 48, moon.name + ' moon')}
-    <div><h2 id="moon-info-title">${esc(moon.name)}</h2><span class="s">Lunar phase · day ${Math.round(age)} of 29.5</span></div>
+    <div><h2 id="moon-info-title">${esc(moon.name)}</h2><span class="s">Lunar phase · day ${Math.max(1, Math.round(age))} of 29.5</span></div>
     <button type="button" class="icon-btn" data-close aria-label="Close">${icon('close', 20, 1.8)}</button>
   </div>
   <div class="orbit">${orbitSVG()}</div>
   ${(() => { const n = L.nextPhases(Date.now(), m.tz); const f = (lbl, x) => x ? `<span><b>${lbl}</b> ${x.date} · ${x.when}</span>` : '';
     return `<p class="next-phases">${f('New moon', n.newMoon)}${f('Full moon', n.fullMoon)}</p>`; })()}
+  </div><div class="pop-b">
   <p>${info.body}</p>
   <h3>For stargazing</h3>
   <p>${info.sky}</p>
-  <a href="${WIKI}${info.wiki}" target="_blank" rel="noopener">Read more on Wikipedia →</a>`;
+  <a href="${WIKI}${info.wiki}" target="_blank" rel="noopener">Read more on Wikipedia →</a></div>`;
     if (typeof moonSheet.showModal === 'function') moonSheet.showModal(); else moonSheet.setAttribute('open', '');
+    // Opening focuses the first button (the X) and Safari rings it; focus the pop-up itself instead.
+    moonSheet.focus({ preventScroll: true });
     // Centred on screen by CSS.
     animateOrbit(moonSheet.querySelector('.orbit svg'), moon.phase);
   }
