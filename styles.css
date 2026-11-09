@@ -194,6 +194,23 @@ a { color: var(--rain); }
 /* ---- current ---- */
 
 /* Left edge lines up with the cards' text (16px inset); the right edge with the calendar icon's outline. */
+/* Column wrappers: invisible upright; two columns sideways on a phone. */
+.col, .slot { display: contents; }
+.slot > * { order: var(--o, 0); } /* the wrapper has no box upright, so its card carries the order */
+@media (orientation: landscape) and (max-height: 500px) {
+  .content {
+    max-width: 920px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 20px; row-gap: 12px; align-items: start;
+    padding-top: max(14px, env(safe-area-inset-top));
+    padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right));
+  }
+  .content > .header, .content > .note, .content > .empty { grid-column: 1 / -1; }
+  .col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .col-a { grid-column: 1; } .col-b { grid-column: 2; }
+  .slot { display: block; }
+  .temp { font-size: 72px; }
+  .is-night .temp { font-size: 64px; }
+  .scenery { height: 420px; }
+}
 .current { display: flex; flex-direction: column; gap: 12px; padding: 4px 21px 0 16px; }
 .current .temp { margin-left: -0.06em; } /* cancels the digits' built-in side bearing */
 .current-top { display: flex; justify-content: space-between; align-items: center; }

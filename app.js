@@ -374,10 +374,14 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
       return `<div class="content">${headerHTML(place, idx, null)}
 <div class="empty">${failed ? '<span>Couldn’t load the forecast. Check your connection.</span><button type="button" class="btn" data-act="refresh">Try again</button>' : '<span>Loading forecast…</span>'}</div></div>`;
     }
-    const sections = m.isNight && m.stars.hero
-      ? [starsHeroHTML(m), currentHTML(m), todayHTML(m), weekHTML(m)]
-      : [currentHTML(m), todayHTML(m), starsHTML(m), weekHTML(m)];
-    return `${scenery(m)}<div class="content${m.isNight ? ' is-night' : ''}">${headerHTML(place, idx, rec)}${sections.join('')}</div>`;
+    // Portrait order (by `order`); in landscape, stars + current go in the left column, Today + next 6 days in the right.
+    // The column wrappers are display: contents in portrait, so they don't affect that layout.
+    const night = m.isNight && m.stars.hero;
+    const stars = night ? starsHeroHTML(m) : starsHTML(m);
+    const o = (html, n) => `<div class="slot" style="--o:${n}">${html}</div>`;
+    const left = night ? o(stars, 1) + o(currentHTML(m), 2) : o(currentHTML(m), 1) + o(stars, 3);
+    const right = o(todayHTML(m), 2) + o(weekHTML(m), 4);
+    return `${scenery(m)}<div class="content${m.isNight ? ' is-night' : ''}">${headerHTML(place, idx, rec)}<div class="col col-a">${left}</div><div class="col col-b">${right}</div></div>`;
   }
 
   const pager = document.getElementById('pager');
