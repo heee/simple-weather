@@ -292,32 +292,32 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
   // Daytime: one line for the better of tonight / pre-dawn; details live in the outlook sheet.
   function starsHTML(m) {
     const s = m.stars, moon = s.moon;
-    const w = s.best || (s.tonight.none ? s.predawn : s.tonight);
-    const name = (w.name || 'Tonight').toLowerCase();
+    // Right half: tonight's evening and the pre-dawn window, each with the meter and clear-sky %.
+    const col = (label, w) => {
+      if (!w || w.none) return `<div class="win-col"><span class="k">${label}</span><span class="na">—</span></div>`;
+      const c = w.past || w.noData ? null : clearOf(w), marks = L.slotMarks(w);
+      return `<div class="win-col v-${w.verdict.cls}" aria-label="${label}: ${esc(w.verdict.text)}${c != null ? `, ${c}% clear sky` : ''}${marks.length ? ', ' + marks.map(k => MARKS[k].label).join(', ') : ''}">
+        <span class="k">${label}</span>${verdictMeter(w.verdict, 'stack')}<span class="pc">${c != null ? c + '%' : esc(w.verdict.text.split(' · ')[0])}</span></div>`;
+    };
     return `<section class="card glass stars compact" data-act="outlook" role="button" tabindex="0" aria-haspopup="dialog" aria-label="Stargazing. Open the star outlook for the next 7 nights">
-  <div class="moon">
+  <div class="moon split">
     <button type="button" class="moon-btn" data-act="moon" aria-haspopup="dialog" aria-label="${esc(moon.name)} moon, ${moon.pct}% lit">${moonIcon(moon.phase, moon.fraction, 34, moon.name + ' moon')}</button>
-    <div><span class="n">Stars ${esc(name)}</span>${verdictMeter(w.verdict, 'sm', clearOf(w))}<span class="s">${esc([w.when, ...L.slotMarks(w).map(k => MARKS[k].label)].join(' · '))}</span><span class="s moon-line"><button type="button" class="moon-name" data-act="moon" aria-haspopup="dialog">${esc(moon.name)}</button> · ${moon.pct}% lit</span></div>
-    ${icon('chevronRight', 16, 2, null, 'var(--muted)').replace('<svg ', '<svg class="more" ')}
+    <div class="left"><span class="n">Stars tonight</span><span class="s moon-line"><button type="button" class="moon-name" data-act="moon" aria-haspopup="dialog">${esc(moon.name)}</button> · ${moon.pct}% lit</span></div>
+    <div class="wins">${col('Evening', s.tonight)}${col('Pre-dawn', s.predawn)}</div>
   </div>
   ${starsDetailHTML(m)}
 </section>`;
   }
 
-  // Sideways only (CSS): tonight's evening and pre-dawn windows plus the best night this week.
+  // Sideways only (CSS): the best night this week (evening and pre-dawn are already on the card).
   function starsDetailHTML(m) {
     const s = m.stars;
-    const row = (label, w) => {
-      if (!w || w.none) return '';
-      const when = w.past ? '' : w.when;
-      return `<div><span class="w">${label}${when ? ` <span class="t">${esc(when)}</span>` : ''}</span>${verdictMeter(w.verdict, 'sm', w.past ? null : clearOf(w))}</div>`;
-    };
     const bestNight = s.outlook.find(n => n.best);
     const bestWin = bestNight && [bestNight.evening, bestNight.morning].find(w => w.best);
     const best = bestWin
       ? `<div><span class="w">Best this week <span class="t">${esc(bestNight.name)} ${esc(bestNight.date)} · ${bestWin.kind === 'tonight' ? 'evening' : 'pre-dawn'}</span></span>${verdictMeter(bestWin.verdict, 'sm', clearOf(bestWin))}</div>`
       : '<div><span class="w">Best this week <span class="t">no good nights</span></span></div>';
-    return `<div class="stars-detail">${row('Evening', s.tonight)}${row('Pre-dawn', s.predawn)}${best}</div>`;
+    return `<div class="stars-detail">${best}</div>`;
   }
 
   // Signal-style meter: 4 translucent bars (Great 4, Good 3, Fair 2, Poor none lit) beside the word.
