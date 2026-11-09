@@ -26,7 +26,7 @@
     loading: new Set(),
     failed: new Set(),
     active: 0,
-    todayFlipped: false
+    flipped: { today: false, week: false }
   };
   if (!Array.isArray(state.places) || !state.places.length) state.places = DEFAULT_PLACES.slice();
   for (const p of state.places) state.wx[p.id] = store.get(wxKey(p.id), null);
@@ -191,9 +191,9 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     <span class="v">${deg(s.temp)}</span>
     ${t.anyRain ? `<span class="r">${s.pop >= 20 ? s.pop + '% rain' : ''}</span>` : ''}
   </div>`).join('');
-    const flipped = state.todayFlipped;
-    return `<section class="card-flip${flipped ? ' flipped' : ''}" aria-label="Today">
-  <div class="flip-inner" data-act="flip" role="button" tabindex="0" aria-pressed="${flipped}" aria-label="Today. Tap to ${flipped ? 'show the forecast' : 'show the temperature curve and sunrise and sunset'}">
+    const flipped = state.flipped.today;
+    return `<section class="card-flip${flipped ? ' flipped' : ''}" data-card="today" aria-label="Today">
+  <div class="flip-inner" data-act="flip" role="button" tabindex="0" aria-pressed="${flipped}" aria-label="${FLIP_LABEL.today(flipped)}">
     <div class="face front card glass" aria-hidden="${flipped}"><span class="label">Today</span><div class="snaps">${snaps}</div></div>
     <div class="face back card glass" aria-hidden="${!flipped}"><span class="label">Today</span>${dayCurveSVG(t)}</div>
   </div>
@@ -361,22 +361,39 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
       <span class="t">${d.name}</span>${icon(d.icon, 24, 1.6)}
       <span class="r">${d.pop >= 20 ? d.pop + '%' : ''}</span>
       <span class="h">${deg(d.hi)}</span><span class="l">${deg(d.lo)}</span></div>`).join('');
-    return `<section class="card glass week" aria-label="Next 6 days">
-  <div class="week-head"><span class="label">Next 6 days</span></div>
-  <div class="week-mini" role="list">${cols}</div>
+    // Back: each of those days' evening stargazing window, lined up under the same day (matched by date).
+    const nights = new Map(m.stars.outlook.map(n => [n.date, n]));
+    const eve = next.map(d => {
+      const n = nights.get(d.date), w = n && n.evening;
+      if (!w || w.none || w.noData) return `<div class="md"><span class="t">${d.name}</span><span class="na">—</span></div>`;
+      const marks = L.slotMarks(w);
+      return `<div class="md${w.best ? ' best' : ''}" role="listitem" aria-label="${d.name} evening: ${esc(w.verdict.text)}, ${clearOf(w)}% clear sky${marks.length ? ', ' + marks.map(k => MARKS[k].label).join(', ') : ''}">
+      <span class="t">${d.name}</span>${verdictMeter(w.verdict, 'stack')}<span class="pc v-${w.verdict.cls}">${clearOf(w)}%</span>
+      <span class="mk">${marks.map(markIcon).join('')}</span></div>`;
+    }).join('');
+    const flipped = state.flipped.week;
+    return `<section class="card-flip week-flip${flipped ? ' flipped' : ''}" data-card="week" aria-label="Next 6 days">
+  <div class="flip-inner" data-act="flip" role="button" tabindex="0" aria-pressed="${flipped}" aria-label="${FLIP_LABEL.week(flipped)}">
+    <div class="face front card glass week" aria-hidden="${flipped}"><div class="week-head"><span class="label">Next 6 days</span></div><div class="week-mini" role="list">${cols}</div></div>
+    <div class="face back card glass week" aria-hidden="${!flipped}"><div class="week-head"><span class="label">Evening stars</span></div><div class="week-mini stars-eve" role="list">${eve}</div></div>
+  </div>
 </section>`;
   }
 
   // Flip in place (no re-render), on every page so swiping keeps the same side up.
-  function toggleFlip() {
-    state.todayFlipped = !state.todayFlipped;
-    pager.querySelectorAll('.card-flip').forEach(c => {
-      c.classList.toggle('flipped', state.todayFlipped);
+  const FLIP_LABEL = {
+    today: f => `Today. Tap to ${f ? 'show the forecast' : 'show the temperature curve and sunrise and sunset'}`,
+    week: f => `Next 6 days. Tap to ${f ? 'show the forecast' : 'show the evening stargazing outlook'}`
+  };
+  function toggleFlip(card) {
+    const f = state.flipped[card] = !state.flipped[card];
+    pager.querySelectorAll(`.card-flip[data-card="${card}"]`).forEach(c => {
+      c.classList.toggle('flipped', f);
       const inner = c.querySelector('.flip-inner');
-      inner.setAttribute('aria-pressed', String(state.todayFlipped));
-      inner.setAttribute('aria-label', `Today. Tap to ${state.todayFlipped ? 'show the forecast' : 'show the temperature curve and sunrise and sunset'}`);
-      c.querySelector('.front').setAttribute('aria-hidden', String(state.todayFlipped));
-      c.querySelector('.back').setAttribute('aria-hidden', String(!state.todayFlipped));
+      inner.setAttribute('aria-pressed', String(f));
+      inner.setAttribute('aria-label', FLIP_LABEL[card](f));
+      c.querySelector('.front').setAttribute('aria-hidden', String(f));
+      c.querySelector('.back').setAttribute('aria-hidden', String(!f));
     });
   }
 
@@ -508,7 +525,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     const act = btn.dataset.act;
     if (act === 'refresh' && place) refresh(place);
     else if (act === 'places') openPlaces();
-    else if (act === 'flip') toggleFlip();
+    else if (act === 'flip') toggleFlip(btn.closest('.card-flip').dataset.card);
     else if (act === 'units-toggle') setUnits(state.units === 'C' ? 'F' : 'C');
     else if (act === 'outlook' && place) openOutlook(place);
     else if (act === 'moon' && place) openMoonInfo(place, btn);
@@ -527,7 +544,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
 
   pager.addEventListener('keydown', e => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
-    if (e.target.matches('.flip-inner')) { e.preventDefault(); toggleFlip(); }
+    if (e.target.matches('.flip-inner')) { e.preventDefault(); toggleFlip(e.target.closest('.card-flip').dataset.card); }
     else if (e.target.matches('.stars[data-act=outlook]')) {
       e.preventDefault();
       const place = state.places.find(p => p.id === e.target.closest('.page').dataset.id);

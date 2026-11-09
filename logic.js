@@ -228,7 +228,7 @@
     const days = [];
     for (let i = ti; i < Math.min(ti + 7, D.time.length); i++) {
       days.push({
-        name: i === ti ? 'Today' : parts(dayStart(i) + 12 * HOUR, tz).wd,
+        name: i === ti ? 'Today' : parts(dayStart(i) + 12 * HOUR, tz).wd, date: monthDay(dayStart(i) + 12 * HOUR, tz),
         icon: iconName(D.weather_code[i], true), label: label(D.weather_code[i], true),
         pop: D.precipitation_probability_max[i] ?? 0,
         lo: D.temperature_2m_min[i], hi: D.temperature_2m_max[i]
