@@ -204,12 +204,22 @@ a { color: var(--rain); }
     padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right));
   }
   .content > .header, .content > .note, .content > .empty { grid-column: 1 / -1; }
-  .col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .col { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
   .col-a { grid-column: 1; } .col-b { grid-column: 2; }
+  /* Both columns share the row's full height; the left spreads out so its last card ends level with the right's. */
+  .col-a, .col-b { align-self: stretch; }
+  .col-a, .col-b { justify-content: space-between; }
   .slot { display: block; }
   .temp { font-size: 72px; }
   .is-night .temp { font-size: 64px; }
-  .scenery { height: 420px; }
+  .scenery { height: 100%; } /* no taller than the screen, so the page doesn't scroll for the sky */
+  .col-b .curve { height: 80px; } /* keeps the flip side from making the Today card taller than its front */
+  .content { row-gap: 8px; padding-top: max(10px, env(safe-area-inset-top)); padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+  /* Tighter Today and Next 6 days so the right column fits the screen height. */
+  .col-b .card { padding: 12px 16px; gap: 8px; }
+  .col-b .snaps { gap: 4px; } .col-b .snap { gap: 3px; } .col-b .snap svg { width: 24px; height: 24px; } .col-b .snap .v { font-size: 18px; }
+  .col-b .week { gap: 8px; }
+  .col-b .week-mini .md { gap: 3px; } .col-b .week-mini svg { width: 22px; height: 22px; } .col-b .week-mini .h { font-size: 16px; } .col-b .week-mini .l { font-size: 13px; }
 }
 .current { display: flex; flex-direction: column; gap: 12px; padding: 4px 21px 0 16px; }
 .current .temp { margin-left: -0.06em; } /* cancels the digits' built-in side bearing */
