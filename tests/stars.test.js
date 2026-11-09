@@ -248,6 +248,15 @@ check('next new and full moon: Nov 9 and Nov 24, 2026, with "in N days" counted 
   assert.strictEqual(later.newMoon.date, 'Dec 8'); // next cycle
 });
 
+check('moon: the outlook\'s current night matches the main card; later nights use local midnight', () => {
+  const now = at('2026-11-09T19:00:00Z'); // 1 pm CST, a day after new moon
+  const m = run(fixture(at('2026-11-09T06:00:00Z'), () => 6, undefined, 11), '2026-11-09T19:00:00Z');
+  assert.strictEqual(m.stars.outlook[0].moon.pct, m.stars.moon.pct);
+  assert.strictEqual(m.stars.outlook[0].moon.name, m.stars.moon.name);
+  const mid = Math.round(SunCalc.getMoonIllumination(new Date(at('2026-11-11T06:00:00Z'))).fraction * 100);
+  assert.strictEqual(m.stars.outlook[1].moon.pct, mid);
+});
+
 // ---- share text ----
 check('share text: next Great window, else best, else none', () => {
   const w = (kind, score, text, extra = {}) => ({ kind, start: at('2026-10-24T10:00:00Z'), when: kind === 'tonight' ? '7:05 pm – 1 am' : '4:30 – 6:10 am', cloud: 5, verdict: { score, text }, ...extra });

@@ -307,7 +307,9 @@
       const noon = dayStart(i) + 12 * HOUR;
       const ev = tonight(i), mo = predawn(i + 1);
       const evening = slot(ev), morning = slot(mo);
-      const illum = SunCalc.getMoonIllumination(new Date(noon + 12 * HOUR));
+      // Later nights: the Moon at local midnight. The current night uses "now", like the moon on the main cards,
+      // so the two never disagree (near new moon the lit share changes about 1% every half day).
+      const illum = SunCalc.getMoonIllumination(new Date(k === 0 ? now : noon + 12 * HOUR));
       outlook.push({
         name: k === 0 ? (early ? 'Now' : 'Tonight') : k === 1 && early ? 'Tonight' : parts(noon, tz).wd,
         date: monthDay(noon, tz), far: k >= SURE_NIGHTS, evening, morning, hours: nightHours(i, ev, mo),
