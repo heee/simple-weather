@@ -484,7 +484,7 @@ a { color: var(--rain); }
 .pop-b > p:first-child { margin-top: 10px; }
 @media (orientation: landscape) and (max-height: 500px) {
   .pop { width: calc(100% - 96px); max-width: 720px; max-height: calc(100dvh - 24px); padding: 18px 22px 20px;
-    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); column-gap: 26px; align-items: start; }
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); column-gap: 26px; align-items: start; }
   .pop[open] { display: grid; }
   .pop-a, .pop-b { display: block; min-width: 0; }
   .pop .orbit { margin-top: 8px; }
