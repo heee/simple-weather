@@ -136,6 +136,21 @@ a { color: var(--rain); }
   mask-image: linear-gradient(to bottom, #000 40%, transparent);
 }
 @media (prefers-color-scheme: dark) { .scenery { background-image: var(--sky-dark); } }
+
+/* Sky motion layer (inside .scenery, so it shares its mask and scroll fade). */
+.fx { position: absolute; inset: 0; overflow: hidden; --fx-star: #F2F5FB; --fx-glow: rgba(220, 230, 255, .55); --fx-rain: rgba(70, 90, 120, .5); --fx-snow: rgba(255, 255, 255, .95); --fx-snow-edge: rgba(110, 125, 150, .45); }
+@media (prefers-color-scheme: dark) { .fx { --fx-rain: rgba(185, 205, 235, .75); --fx-snow: rgba(240, 246, 255, .9); --fx-snow-edge: transparent; } }
+@media (prefers-color-scheme: light) { .fx { --fx-star: #5E6C98; --fx-glow: rgba(94, 108, 152, .3); } }
+.fx i { position: absolute; display: block; will-change: transform, opacity; }
+.fx .tw { width: 2.4px; height: 2.4px; border-radius: 50%; background: var(--fx-star); box-shadow: 0 0 6px 1px var(--fx-glow); opacity: .25; animation: tw var(--d) ease-in-out var(--delay) infinite; }
+.fx .tw.big { width: 3.2px; height: 3.2px; }
+@keyframes tw { 0%, 100% { opacity: .2; transform: scale(.8); } 45% { opacity: 1; transform: scale(1.15); } 60% { opacity: .85; } }
+.fx .drop { top: -40px; width: 1.3px; height: var(--len); border-radius: 1px; opacity: var(--o); background: linear-gradient(transparent, var(--fx-rain)); animation: fall var(--d) linear var(--delay) infinite; }
+@keyframes fall { from { transform: translate(0, 0) rotate(14deg); } to { transform: translate(-150px, 620px) rotate(14deg); } }
+.fx .flake { top: -12px; width: var(--s); height: var(--s); border-radius: 50%; opacity: var(--o); background: var(--fx-snow); box-shadow: 0 0 0 .5px var(--fx-snow-edge); animation: snow var(--d) linear var(--delay) infinite; }
+@keyframes snow { 0% { transform: translate(0, 0); } 25% { transform: translate(var(--sway), 145px); } 50% { transform: translate(0, 290px); } 75% { transform: translate(calc(var(--sway) * -1), 435px); } 100% { transform: translate(0, 580px); } }
+/* Still when this city isn't on screen, while the app is hidden, or with Reduce Motion. */
+.page:not(.active) .fx i, .app-hidden .fx i { animation-play-state: paused; }
 /* Soft moon glow over clear and partly cloudy night skies while the moon is up. */
 .scenery.moonlit::after {
   content: ""; position: absolute; inset: 0;
@@ -454,6 +469,7 @@ a { color: var(--rain); }
 .pop a { display: inline-block; margin-top: 20px; font-size: 14px; font-weight: 600; text-decoration: none; }
 
 @media (prefers-reduced-motion: reduce) {
+  .fx i { animation: none !important; }
   .curve .nowglow { animation: none; }
   .flip-inner { transition: none; }
   .pop[open] { animation: none; }

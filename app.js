@@ -90,7 +90,43 @@
     if (g === 'thunder') g = 'rain';
     const t = m.cur.isDay ? 'day' : 'night';
     const moonlit = !m.cur.isDay && (g === 'clear' || g === 'partly') && m.stars.moon.upNow;
-    return `<div class="scenery${moonlit ? ' moonlit' : ''}" style="--sky-light:url(img/sky/light-${t}-${g}.webp);--sky-dark:url(img/sky/dark-${t}-${g}.webp)" aria-hidden="true"></div>`;
+    return `<div class="scenery${moonlit ? ' moonlit' : ''}" style="--sky-light:url(img/sky/light-${t}-${g}.webp);--sky-dark:url(img/sky/dark-${t}-${g}.webp)" aria-hidden="true">${skyFX(m)}</div>`;
+  }
+
+  // Light motion over the painted sky: twinkling stars on clear/partly cloudy nights, falling rain, drifting snow.
+  // Only opacity and transform animate. Deterministic (seeded) so the same scene always looks the same.
+  function skyFX(m) {
+    const c = m.cur.code, g = L.group(c), night = !m.cur.isDay;
+    let kind = null, lvl = 'moderate';
+    if (night && (g === 'clear' || g === 'partly')) { kind = 'stars'; lvl = g === 'clear' ? 'many' : 'few'; }
+    else if (g === 'rain' || g === 'thunder') {
+      kind = 'rain';
+      lvl = g === 'thunder' || [65, 67, 82].includes(c) ? 'heavy' : [51, 53, 55, 56, 57, 61, 66, 80].includes(c) ? 'light' : 'moderate';
+    } else if (g === 'snow') { kind = 'snow'; lvl = [71, 77, 85].includes(c) ? 'light' : [75, 86].includes(c) ? 'heavy' : 'moderate'; }
+    if (!kind) return '';
+    const key = kind + '-' + lvl;
+    let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const f = n => n.toFixed(2);
+    let out = '';
+    if (kind === 'stars') {
+      for (let i = 0, n = lvl === 'many' ? 22 : 11; i < n; i++) {
+        const big = rnd() < 0.25;
+        out += `<i class="tw${big ? ' big' : ''}" style="left:${f(rnd() * 100)}%;top:${f(Math.pow(rnd(), 1.4) * 52)}%;--d:${f(2.8 + rnd() * 3.4)}s;--delay:${f(-rnd() * 6)}s"></i>`;
+      }
+    } else if (kind === 'rain') {
+      const [n, sp, len] = { light: [26, 1.25, 16], moderate: [55, 0.95, 22], heavy: [100, 0.7, 28] }[lvl];
+      for (let i = 0; i < n; i++) {
+        const d = sp * (0.8 + rnd() * 0.4);
+        out += `<i class="drop" style="left:${f(rnd() * 130)}%;--len:${Math.round(len * (0.7 + rnd() * 0.6))}px;--d:${f(d)}s;--delay:${f(-rnd() * d)}s;--o:${f(0.35 + rnd() * 0.5)}"></i>`;
+      }
+    } else {
+      const [n, base] = { light: [18, 13], moderate: [36, 10], heavy: [64, 8] }[lvl];
+      for (let i = 0; i < n; i++) {
+        const near = rnd(), d = base * (1.4 - near * 0.6);
+        out += `<i class="flake" style="left:${f(rnd() * 100)}%;--s:${f(2 + near * 3.5)}px;--d:${f(d)}s;--delay:${f(-rnd() * d)}s;--sway:${Math.round(8 + rnd() * 16)}px;--o:${f(0.45 + near * 0.5)}"></i>`;
+      }
+    }
+    return `<div class="fx" data-key="${key}">${out}</div>`;
   }
 
   /* ---------- formatting ---------- */
@@ -356,7 +392,12 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     const idx = state.places.findIndex(p => p.id === id);
     const page = pager.querySelector(`.page[data-id="${CSS.escape(id)}"]`);
     if (idx < 0 || !page) return;
+    // Keep a running sky animation across re-renders (every minute) when the scene hasn't changed.
+    const oldFx = page.querySelector('.fx');
     page.innerHTML = pageHTML(state.places[idx], idx);
+    const newFx = page.querySelector('.fx');
+    if (oldFx && newFx && oldFx.dataset.key === newFx.dataset.key) newFx.replaceWith(oldFx);
+    page.classList.toggle('active', idx === state.active);
     fadeScenery(page);
   }
   function renderAll() { state.places.forEach(p => renderPage(p.id)); }
@@ -370,7 +411,10 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
 
   pager.addEventListener('scroll', () => {
     const i = Math.round(pager.scrollLeft / Math.max(1, pager.clientWidth));
-    if (i !== state.active && i >= 0 && i < state.places.length) state.active = i;
+    if (i !== state.active && i >= 0 && i < state.places.length) {
+      state.active = i;
+      pager.querySelectorAll('.page').forEach((p, k) => p.classList.toggle('active', k === i)); // only the visible sky animates
+    }
   }, { passive: true });
 
   /* ---------- data ---------- */
@@ -471,6 +515,7 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
   });
 
   document.addEventListener('visibilitychange', () => {
+    document.documentElement.classList.toggle('app-hidden', document.visibilityState !== 'visible');
     if (document.visibilityState !== 'visible') return;
     renderAll();
     refreshOld();
