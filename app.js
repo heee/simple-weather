@@ -670,6 +670,7 @@ ${legend}`;
     shareReady = null;
     sharePrep = prepareShare(place, m).then(d => (shareReady = d)).catch(e => { console.error(e); return null; });
     if (typeof outlookSheet.showModal === 'function') outlookSheet.showModal(); else outlookSheet.setAttribute('open', '');
+    outlookSheet.focus({ preventScroll: true }); // not the Share button, which Safari would ring
   }
   function toggleNight(row) {
     const detail = document.getElementById(row.dataset.night);
@@ -1002,6 +1003,7 @@ ${legend}`;
     results.innerHTML = '';
     sheet.classList.remove('searching');
     if (typeof sheet.showModal === 'function') sheet.showModal(); else sheet.setAttribute('open', '');
+    sheet.focus({ preventScroll: true }); // not the first button, which Safari would ring
   }
   function closePlaces() { if (sheet.open) sheet.close ? sheet.close() : sheet.removeAttribute('open'); }
   document.getElementById('places-close').addEventListener('click', closePlaces);

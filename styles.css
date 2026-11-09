@@ -496,7 +496,7 @@ a { color: var(--rain); }
 .pop .s { font-size: 13px; color: var(--muted); }
 .pop p { margin: 10px 0 0; font-size: 15px; line-height: 1.6; color: var(--soft); }
 .pop .pop-head + p { margin-top: 16px; }
-.pop:focus { outline: none; }
+.pop:focus, .sheet:focus { outline: none; }
 .pop-a, .pop-b { display: contents; } /* columns only when the phone is sideways */
 .pop-b > p:first-child { margin-top: 10px; }
 @media (orientation: landscape) and (max-height: 500px) {
