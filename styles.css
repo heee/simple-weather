@@ -316,12 +316,14 @@ a { color: var(--rain); }
 .stars.compact { padding: 12px 16px; }
 .stars-detail { display: none; }
 /* Next 6 days, back: evening stars per day, same columns as the front. */
-.stars-eve .md { border-radius: 8px; padding: 0 0 4px; }
+.stars-eve { align-items: start; margin-block: auto; } /* row centred in the card; columns don't stretch */
+.stars-eve .md { border-radius: 10px; padding: 8px 0; }
 .stars-eve .md.best { background: var(--good-bg); }
 .stars-eve .verdict.stack { flex-direction: column; gap: 0; height: 30px; justify-content: center; }
 .stars-eve .verdict.stack > span:last-child { display: none; }
 .stars-eve .pc { font-size: 16px; font-weight: 600; }
-.stars-eve .mk { display: flex; gap: 3px; height: 14px; color: var(--muted); }
+.stars-eve .mk { display: flex; gap: 3px; height: 12px; color: var(--muted); }
+.stars-eve .mk:empty { display: none; }
 .stars-eve .na { color: var(--muted); padding-top: 20px; }
 @media (orientation: landscape) and (max-height: 500px) {
   .stars.compact { display: flex; flex-direction: column; gap: 10px; }
