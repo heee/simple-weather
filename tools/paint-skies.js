@@ -221,26 +221,7 @@ function paint({ W, H, T, theme, time, scene }) {
     }
   }
 
-  if (scene === 'rain') {
-    const c = layer(), b = c.getContext('2d');
-    b.strokeStyle = T.rain; b.lineCap = 'round';
-    for (let i = 0; i < 260; i++) {
-      const x = rnd() * W * 1.1, y = H * 0.22 + rnd() * H * 0.6, len = 26 + rnd() * 34;
-      b.globalAlpha = 0.35 + rnd() * 0.65; b.lineWidth = 1 + rnd() * 1.4;
-      b.beginPath(); b.moveTo(x, y); b.lineTo(x - len * 0.28, y + len); b.stroke();
-    }
-    ctx.save(); ctx.filter = 'blur(0.6px)'; ctx.drawImage(c, 0, 0); ctx.restore();
-  }
-  if (scene === 'snow') {
-    for (let i = 0; i < 170; i++) {
-      const x = rnd() * W, y = H * 0.12 + rnd() * H * 0.68, r = 1.6 + Math.pow(rnd(), 2) * 5;
-      const c = ctx;
-      c.save(); c.filter = `blur(${r > 4.5 ? 2 : 0.6}px)`;
-      c.fillStyle = T.snowEdge; c.beginPath(); c.arc(x, y + 0.8, r + 0.6, 0, 7); c.fill();
-      c.fillStyle = T.snow; c.beginPath(); c.arc(x, y, r, 0, 7); c.fill();
-      c.restore();
-    }
-  }
+  // Rain and snow are not painted: the app animates them over the sky (styles.css .fx), so nothing looks stuck.
 
   // Fine grain so the gradients do not band
   const img = ctx.getImageData(0, 0, W, H), d = img.data, amp = T.grain;

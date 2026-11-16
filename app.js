@@ -114,16 +114,17 @@
         out += `<i class="tw${big ? ' big' : ''}" style="left:${f(rnd() * 100)}%;top:${f(Math.pow(rnd(), 1.4) * 52)}%;--d:${f(2.8 + rnd() * 3.4)}s;--delay:${f(-rnd() * 6)}s"></i>`;
       }
     } else if (kind === 'rain') {
-      const [n, sp, len] = { light: [26, 1.25, 16], moderate: [55, 0.95, 22], heavy: [100, 0.7, 28] }[lvl];
+      // Depth: far drops are shorter, fainter and slower; near ones longer, brighter and faster.
+      const [n, sp, len] = { light: [36, 1.25, 16], moderate: [72, 0.95, 22], heavy: [120, 0.7, 28] }[lvl];
       for (let i = 0; i < n; i++) {
-        const d = sp * (0.8 + rnd() * 0.4);
-        out += `<i class="drop" style="left:${f(rnd() * 130)}%;--len:${Math.round(len * (0.7 + rnd() * 0.6))}px;--d:${f(d)}s;--delay:${f(-rnd() * d)}s;--o:${f(0.35 + rnd() * 0.5)}"></i>`;
+        const near = rnd(), d = sp * (1.45 - near * 0.65);
+        out += `<i class="drop" style="left:${f(rnd() * 130)}%;--y:${f(rnd() * 80)}%;--len:${Math.round(len * (0.55 + near * 0.75))}px;--w:${f(0.9 + near * 0.7)}px;--d:${f(d)}s;--delay:${f(-rnd() * d)}s;--o:${f(0.25 + near * 0.6)}"></i>`;
       }
     } else {
       const [n, base] = { light: [18, 13], moderate: [36, 10], heavy: [64, 8] }[lvl];
       for (let i = 0; i < n; i++) {
         const near = rnd(), d = base * (1.4 - near * 0.6);
-        out += `<i class="flake" style="left:${f(rnd() * 100)}%;--s:${f(2 + near * 3.5)}px;--d:${f(d)}s;--delay:${f(-rnd() * d)}s;--sway:${Math.round(8 + rnd() * 16)}px;--o:${f(0.45 + near * 0.5)}"></i>`;
+        out += `<i class="flake" style="left:${f(rnd() * 100)}%;--y:${f(rnd() * 80)}%;--s:${f(2 + near * 3.5)}px;--d:${f(d)}s;--delay:${f(-rnd() * d)}s;--sway:${Math.round(8 + rnd() * 16)}px;--o:${f(0.45 + near * 0.5)}"></i>`;
       }
     }
     return `<div class="fx" data-key="${key}">${out}</div>`;
