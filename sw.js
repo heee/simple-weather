@@ -1,6 +1,6 @@
 // App-shell cache. Forecast data lives in localStorage, so the API is never cached here.
 // Bump VERSION whenever a shell file changes.
-const VERSION = 'sw-v74';
+const VERSION = 'sw-v75';
 const SHELL = [
   './',
   'index.html',
@@ -13,9 +13,12 @@ const SHELL = [
   'icons/apple-touch-icon.png',
   'icons/icon-192.png',
   'icons/icon-512.png',
-  // Painted skies: ~220 KB in all, so every scene works offline.
-  ...['light', 'dark'].flatMap(theme => ['day', 'night'].flatMap(time =>
-    ['clear', 'partly', 'cloudy', 'fog', 'rain', 'snow'].map(g => `img/sky/${theme}-${time}-${g}.webp`)))
+  // Painted skies: ~420 KB in all, so every scene works offline.
+  ...['light', 'dark'].flatMap(theme => [
+    ...['day', 'night'].flatMap(time =>
+      ['clear', 'partly', 'cloudy', 'fog', 'rain', 'snow', 'storm', 'haze'].map(g => `${time}-${g}`)),
+    ...['dawn', 'sunrise', 'sunset', 'dusk'].flatMap(time => ['clear', 'partly'].map(g => `${time}-${g}`))
+  ].map(name => `img/sky/${theme}-${name}.webp`))
 ];
 
 self.addEventListener('install', event => {

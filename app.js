@@ -84,30 +84,45 @@
 
   /* ---------- background scenery ---------- */
 
-  // Painted skies (tools/paint-skies.js), one per weather group, day/night, light/dark theme.
+  // Painted skies (tools/paint-skies.js): per weather, day/night or sunrise/sunset/twilight, light/dark theme.
+  // Around sunrise and sunset, weather without its own painting gets a horizon tint instead (styles.css).
   function scenery(m) {
-    let g = L.group(m.cur.code);
-    if (g === 'thunder') g = 'rain';
-    const t = m.cur.isDay ? 'day' : 'night';
-    const moonlit = !m.cur.isDay && (g === 'clear' || g === 'partly') && m.stars.moon.upNow;
-    return `<div class="scenery${moonlit ? ' moonlit' : ''}" style="--sky-light:url(img/sky/light-${t}-${g}.webp);--sky-dark:url(img/sky/dark-${t}-${g}.webp)" aria-hidden="true">${skyFX(m)}</div>`;
+    const s = m.sky;
+    const moonlit = !m.cur.isDay && !s.phase && (s.group === 'clear' || s.group === 'partly') && m.stars.moon.upNow;
+    const key = [s.img, s.tint, moonlit && 'moon'].filter(Boolean).join(' ');
+    return `<div class="scenery${moonlit ? ' moonlit' : ''}" data-sky="${key}"${s.tint ? ` data-tint="${s.tint}"` : ''} style="--sky-light:url(img/sky/light-${s.img}.webp);--sky-dark:url(img/sky/dark-${s.img}.webp)" aria-hidden="true">${skyFX(m)}</div>`;
   }
 
-  // Light motion over the painted sky: twinkling stars on clear/partly cloudy nights, falling rain, drifting snow.
+  // Light motion over the painted sky: twinkling stars on clear/partly cloudy nights, falling rain, drifting snow,
+  // soft lightning in storms and wisps of cloud on windy days.
   // Only opacity and transform animate. Deterministic (seeded) so the same scene always looks the same.
   function skyFX(m) {
-    const c = m.cur.code, g = L.group(c), night = !m.cur.isDay;
+    const c = m.cur.code, g = m.sky.group, night = !m.cur.isDay;
     let kind = null, lvl = 'moderate';
-    if (night && (g === 'clear' || g === 'partly')) { kind = 'stars'; lvl = g === 'clear' ? 'many' : 'few'; }
-    else if (g === 'rain' || g === 'thunder') {
+    // Twilight skies have their own painted stars, so no twinkling until it is properly dark.
+    if (night && !m.sky.phase && (g === 'clear' || g === 'partly')) { kind = 'stars'; lvl = g === 'clear' ? 'many' : 'few'; }
+    else if (g === 'rain' || g === 'storm') {
       kind = 'rain';
-      lvl = g === 'thunder' || [65, 67, 82].includes(c) ? 'heavy' : [51, 53, 55, 56, 57, 61, 66, 80].includes(c) ? 'light' : 'moderate';
+      lvl = g === 'storm' || [65, 67, 82].includes(c) ? 'heavy' : [51, 53, 55, 56, 57, 61, 66, 80].includes(c) ? 'light' : 'moderate';
     } else if (g === 'snow') { kind = 'snow'; lvl = [71, 77, 85].includes(c) ? 'light' : [75, 86].includes(c) ? 'heavy' : 'moderate'; }
-    if (!kind) return '';
-    const key = kind + '-' + lvl;
+    // Wisps cross the sky faster in stronger wind: about 26 s at 20 mph, 12 s at 45 mph and above.
+    const wisp = m.sky.windy ? Math.round(26 - (Math.min(m.cur.wind, 45) - 20) * 0.56) : 0;
+    if (!kind && !wisp) return '';
+    const key = [kind && kind + '-' + lvl, g === 'storm' && 'flash', wisp && 'wisp-' + wisp].filter(Boolean).join(' ');
     let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
     const f = n => n.toFixed(2);
     let out = '';
+    // Lightning: two soft glows inside the clouds on 11 s and 14 s cycles, so they come irregularly, about every 6–14 s.
+    if (g === 'storm') {
+      out += `<i class="flash" style="--fx-x:28%;--fx-y:16%;--d:11s;--delay:-3s"></i><i class="flash" style="--fx-x:74%;--fx-y:24%;--d:14s;--delay:-9.5s"></i>`;
+    }
+    if (wisp) {
+      // In the open sky above the cards (the top third), staggered so a few are always in view.
+      for (let i = 0; i < 6; i++) {
+        const d = wisp * (0.85 + rnd() * 0.3);
+        out += `<i class="wisp" style="left:${f(i * 14 - 8 + rnd() * 8)}%;top:${f(4 + (i * 5) % 26 + rnd() * 3)}%;--w:${Math.round(180 + rnd() * 140)}px;--d:${f(d)}s;--delay:${f(-(i / 6 + rnd() * 0.1) * d)}s;--o:${f(0.6 + rnd() * 0.4)}"></i>`;
+      }
+    }
     if (kind === 'stars') {
       for (let i = 0, n = lvl === 'many' ? 22 : 11; i < n; i++) {
         const big = rnd() < 0.25;
@@ -120,7 +135,7 @@
         const near = rnd(), d = sp * (1.45 - near * 0.65);
         out += `<i class="drop" style="left:${f(rnd() * 130)}%;--y:${f(rnd() * 80)}%;--len:${Math.round(len * (0.55 + near * 0.75))}px;--w:${f(0.9 + near * 0.7)}px;--d:${f(d)}s;--delay:${f(-rnd() * d)}s;--o:${f(0.25 + near * 0.6)}"></i>`;
       }
-    } else {
+    } else if (kind === 'snow') {
       const [n, base] = { light: [18, 13], moderate: [36, 10], heavy: [64, 8] }[lvl];
       for (let i = 0; i < n; i++) {
         const near = rnd(), d = base * (1.4 - near * 0.6);
@@ -432,18 +447,29 @@ ${state.failed.has(place.id) && rec ? '<div class="note" role="status">Couldn’
     const page = pager.querySelector(`.page[data-id="${CSS.escape(id)}"]`);
     if (idx < 0 || !page) return;
     // Keep a running sky animation across re-renders (every minute) when the scene hasn't changed.
-    const oldFx = page.querySelector('.fx');
+    const oldFx = page.querySelector('.fx'), oldSky = page.querySelector('.scenery:not(.leaving)');
     page.innerHTML = pageHTML(state.places[idx], idx);
-    const newFx = page.querySelector('.fx');
+    const newFx = page.querySelector('.fx'), newSky = page.querySelector('.scenery');
     if (oldFx && newFx && oldFx.dataset.key === newFx.dataset.key) newFx.replaceWith(oldFx);
     page.classList.toggle('active', idx === state.active);
     fadeScenery(page);
+    crossFade(oldSky, newSky);
+  }
+  // When the sky changes (dawn turns to sunrise, rain to a storm), the old one fades out over the new.
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  function crossFade(oldSky, newSky) {
+    if (!oldSky || !newSky || oldSky.dataset.sky === newSky.dataset.sky || reduceMotion.matches || !oldSky.animate) return;
+    oldSky.classList.add('leaving');
+    newSky.after(oldSky);
+    const from = getComputedStyle(oldSky).opacity;
+    oldSky.style.opacity = 0;
+    oldSky.animate([{ opacity: from }, { opacity: 0 }], { duration: 2000, easing: 'ease-in-out' }).onfinish = () => oldSky.remove();
   }
   function renderAll() { state.places.forEach(p => renderPage(p.id)); }
 
   // Scenery fades a little as the content scrolls up over it.
   function fadeScenery(page) {
-    const sc = page.querySelector('.scenery');
+    const sc = page.querySelector('.scenery:not(.leaving)');
     if (sc) sc.style.opacity = Math.max(0.3, 1 - page.scrollTop / 450).toFixed(2);
   }
   function onPageScroll(e) { fadeScenery(e.currentTarget); }

@@ -77,6 +77,37 @@
     return g;
   }
 
+  /* ---------- background sky ---------- */
+
+  // Where the sun is around sunrise and sunset, for the background sky:
+  // 'dawn' twilight (sun 6° below the horizon until sunrise), 'sunrise' (until the sun is 6° up),
+  // 'sunset' (from 6° up until sunset), 'dusk' twilight (until 6° below). null the rest of the time.
+  // Checks yesterday and tomorrow too, so it is right near midnight in any time zone. Where the sun
+  // never gets that low or high (polar summer and winter) a window is skipped or ends at solar noon.
+  function sunPhase(now, lat, lon) {
+    for (const d of [0, -1, 1]) {
+      const t = SunCalc.getTimes(new Date(now + d * DAY), lat, lon);
+      const noon = +t.solarNoon;
+      const am = valid(t.goldenHourEnd) && +t.goldenHourEnd < noon ? +t.goldenHourEnd : noon;
+      const pm = valid(t.goldenHour) && +t.goldenHour > noon ? +t.goldenHour : noon;
+      const windows = [['dawn', t.dawn, t.sunrise], ['sunrise', t.sunrise, am], ['sunset', pm, t.sunset], ['dusk', t.sunset, t.dusk]];
+      for (const [name, a, b] of windows) {
+        if (valid(new Date(+a)) && valid(new Date(+b)) && now >= +a && now < +b) return name;
+      }
+    }
+    return null;
+  }
+
+  // Which painted sky to show (img/sky/<theme>-<img>.webp), and the horizon tint over skies that have
+  // no sunrise or sunset painting of their own. vis: this hour's visibility in metres; wind in mph.
+  function skyScene(code, isDay, phase, vis, wind) {
+    let g = group(code);
+    if (g === 'thunder') g = 'storm';
+    else if ((g === 'clear' || g === 'partly' || g === 'cloudy') && hazeClass(vis ?? Infinity) === 'haze') g = 'haze';
+    const painted = !!phase && (g === 'clear' || g === 'partly');
+    return { group: g, phase, img: painted ? `${phase}-${g}` : `${isDay ? 'day' : 'night'}-${g}`, tint: painted ? null : phase, windy: wind >= 20 };
+  }
+
   const DIRS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
   const compass = deg => DIRS[Math.round((((deg % 360) + 360) % 360) / 45) % 8];
 
@@ -203,6 +234,8 @@
     }
     cur.label = label(cur.code, cur.isDay);
     cur.icon = iconName(cur.code, cur.isDay);
+    const vis = hi !== undefined && H.visibility ? H.visibility[hi] : null;
+    const sky = skyScene(cur.code, cur.isDay, sunPhase(now, lat, lon), vis, cur.wind);
 
     // Today card
     const snaps = [['Morning', 7], ['Noon', 12], ['Evening', 18], ['Night', 22]].map(([name, h]) => {
@@ -373,7 +406,7 @@
     }
 
     return {
-      tz, isNight, cur, today: todayCard, days,
+      tz, isNight, cur, sky, today: todayCard, days,
       stars: { tonight: tw, predawn: pw, best, hero, moon, outlook }
     };
   }
@@ -479,5 +512,5 @@
     return { newMoon: describe(find(0)), fullMoon: describe(find(0.5)) };
   }
 
-  root.SWLogic = { nextPhases, slotMarks, shareText, placeQueries, placeMatches, rankPlaces, build, parts, time, span, group, label, iconName, compass, phaseName, verdict, cloudClass, hazeClass, moonEvents };
+  root.SWLogic = { nextPhases, slotMarks, shareText, placeQueries, placeMatches, rankPlaces, build, parts, time, span, group, sunPhase, skyScene, label, iconName, compass, phaseName, verdict, cloudClass, hazeClass, moonEvents };
 })(typeof window !== 'undefined' ? window : globalThis);

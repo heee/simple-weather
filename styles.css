@@ -151,6 +151,36 @@ a { color: var(--rain); }
 @keyframes snow { 0% { transform: translate(0, 0); } 25% { transform: translate(var(--sway), 145px); } 50% { transform: translate(0, 290px); } 75% { transform: translate(calc(var(--sway) * -1), 435px); } 100% { transform: translate(0, 580px); } }
 /* Still when this city isn't on screen, while the app is hidden, or with Reduce Motion. */
 .page:not(.active) .fx i, .app-hidden .fx i { animation-play-state: paused; }
+/* Lightning: a soft glow inside the clouds, now and then a double flicker. Never a bolt, never fast. */
+.fx .flash { inset: 0; opacity: 0; background: radial-gradient(ellipse 70% 40% at var(--fx-x) var(--fx-y), var(--fx-flash), transparent 70%); animation: flash var(--d) linear var(--delay) infinite; }
+.fx .flash + .flash { animation-name: flash1; }
+@keyframes flash { 0%, 88% { opacity: 0; } 89% { opacity: 1; } 90.5% { opacity: .25; } 92% { opacity: .8; } 95%, 100% { opacity: 0; } }
+@keyframes flash1 { 0%, 90% { opacity: 0; } 91% { opacity: .9; } 94%, 100% { opacity: 0; } }
+/* Wind: faint streaks of cloud drifting across. */
+.fx .wisp { width: var(--w); height: 22px; border-radius: 50%; opacity: var(--o); background: radial-gradient(closest-side, var(--fx-wisp), transparent); animation: wisp var(--d) linear var(--delay) infinite; }
+@keyframes wisp { from { transform: translateX(-380px); } to { transform: translateX(460px); } }
+.fx { --fx-flash: rgba(255, 255, 255, .75); --fx-wisp: rgba(255, 255, 255, .8); }
+@media (prefers-color-scheme: dark) { .fx { --fx-flash: rgba(190, 205, 240, .32); --fx-wisp: rgba(175, 190, 220, .24); } }
+/* Around sunrise and sunset, a glow on the horizon over skies without their own sunrise or sunset painting. */
+.scenery {
+  --tint-dawn: radial-gradient(140% 40% at 30% 46%, rgba(230, 195, 215, .6), rgba(230, 195, 215, 0) 70%);
+  --tint-sunrise: radial-gradient(120% 50% at 22% 44%, rgba(255, 205, 175, .6), rgba(255, 205, 175, 0) 70%);
+  --tint-sunset: radial-gradient(120% 50% at 78% 44%, rgba(255, 165, 115, .55), rgba(255, 165, 115, 0) 70%);
+  --tint-dusk: radial-gradient(140% 40% at 70% 46%, rgba(205, 165, 205, .55), rgba(205, 165, 205, 0) 70%);
+}
+@media (prefers-color-scheme: dark) {
+  .scenery {
+    --tint-dawn: radial-gradient(140% 40% at 30% 46%, rgba(160, 105, 150, .45), rgba(160, 105, 150, 0) 70%);
+    --tint-sunrise: radial-gradient(120% 50% at 22% 44%, rgba(205, 130, 120, .5), rgba(205, 130, 120, 0) 70%);
+    --tint-sunset: radial-gradient(120% 50% at 78% 44%, rgba(225, 110, 70, .5), rgba(225, 110, 70, 0) 70%);
+    --tint-dusk: radial-gradient(140% 40% at 70% 46%, rgba(140, 85, 140, .45), rgba(140, 85, 140, 0) 70%);
+  }
+}
+.scenery[data-tint]::before { content: ""; position: absolute; inset: 0; }
+.scenery[data-tint="dawn"]::before { background: var(--tint-dawn); }
+.scenery[data-tint="sunrise"]::before { background: var(--tint-sunrise); }
+.scenery[data-tint="sunset"]::before { background: var(--tint-sunset); }
+.scenery[data-tint="dusk"]::before { background: var(--tint-dusk); }
 /* Soft moon glow over clear and partly cloudy night skies while the moon is up. */
 .scenery.moonlit::after {
   content: ""; position: absolute; inset: 0;
@@ -545,6 +575,7 @@ a { color: var(--rain); }
   /* Still picture: drops and flakes spread over the sky instead of waiting above it. */
   .fx .drop, .fx .flake { top: var(--y); }
   .fx .drop { transform: rotate(14deg); }
+  .fx .flash { display: none; }
   .curve .nowglow { animation: none; }
   .flip-inner { transition: none; }
   .pop[open] { animation: none; }

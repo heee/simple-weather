@@ -23,6 +23,7 @@ Run the stargazing checks (verified against USNO almanac values for Houston):
 ```
 node tests/stars.test.js
 node tests/places.test.js   # place search parsing
+node tests/sky.test.js      # which background sky is shown
 ```
 
 When you change any shell file, bump `VERSION` in `sw.js` so installed copies pick it up.
@@ -32,6 +33,6 @@ When you change any shell file, bump `VERSION` in `sw.js` so installed copies pi
 - `index.html`, `styles.css` — layout and light/dark themes
 - `logic.js` — forecast model and stargazing verdicts (no DOM; also runs in Node)
 - `app.js` — rendering, caching, places, refresh
-- `img/sky/` — painted background skies (light/dark theme × day/night × clear, partly, cloudy, fog, rain, snow); regenerate with `node tools/paint-skies.js` (needs Playwright)
+- `img/sky/` — painted background skies (light/dark theme × day/night × clear, partly, cloudy, fog, rain, snow, storm, haze, plus dawn twilight, sunrise, sunset and dusk twilight for clear and partly cloudy); regenerate with `node tools/paint-skies.js` (needs Playwright; `--only <text>` and `--out <dir>` for previews)
 - `sw.js`, `manifest.json`, `icons/` — PWA; icons are painted by `node tools/paint-icon.js`
 - `vendor/suncalc.js` (BSD-2), `fonts/manrope.woff2` (OFL)
